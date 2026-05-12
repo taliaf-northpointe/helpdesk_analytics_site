@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { HeaderVine, HeaderSnake } from "@/components/layout/LofiDecor";
 
 interface HeaderProps {
   greeting:  string;
@@ -26,7 +27,7 @@ export function Header({ greeting, subtitle, onRefresh, refreshing, rightSlot }:
   };
 
   return (
-    <header className="flex flex-col gap-3 px-6 pt-6 pb-4 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-20">
+    <header className="relative flex flex-col gap-3 px-6 pt-6 pb-4 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-20 overflow-hidden">
       {/* Top row */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -84,6 +85,11 @@ export function Header({ greeting, subtitle, onRefresh, refreshing, rightSlot }:
             <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive" />
           </button>
         </div>
+      </div>
+      {/* Lofi: vines + snake in the right corner, pink theme only */}
+      <div className="lofi-decor">
+        <HeaderVine />
+        <HeaderSnake />
       </div>
     </header>
   );

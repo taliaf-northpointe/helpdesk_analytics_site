@@ -98,6 +98,13 @@
 .theme-pink [fill="#2C4A6E"] { fill: #DB7093; }
 .theme-pink [fill="#4A9BB8"] { fill: #FFA6C9; }
 .theme-pink [fill="#3B82F6"] { fill: #DB7093; }
+.theme-pink [fill="#F59E0B"] { fill: #FFA6C9; }  /* In Progress: amber → pink */
+.theme-pink [fill="#8B5CF6"] { fill: #FFBDD7; }  /* On Hold: purple → light pink */
+.theme-pink [fill="#10B981"] { fill: #C95C7A; }  /* Resolved: green → deep rose */
+
+/* Lofi decorations: only visible in pink theme */
+.lofi-decor { display: none; }
+.theme-pink .lofi-decor { display: block; }
 
 @layer base {
   * { @apply border-border; }
