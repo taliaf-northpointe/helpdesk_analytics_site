@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { ColorThemeSwitcher } from "@/components/layout/ColorThemeSwitcher";
 
 const NAV_ITEMS = [
   { href: "/",            icon: LayoutDashboard, label: "Dashboard"   },
@@ -89,6 +90,11 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Color theme switcher */}
+      <div className="px-2 pb-1">
+        <ColorThemeSwitcher collapsed={collapsed} />
+      </div>
 
       {/* User profile */}
       <div className="px-2 pb-4 border-t border-white/10 pt-3">

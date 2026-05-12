@@ -16,17 +16,17 @@ const config: Config = {
     },
     extend: {
       colors: {
-        // Northpointe brand palette
+        // Northpointe brand palette — driven by CSS variables for theme switching
         brand: {
-          primary:   "#2C4A6E",
-          secondary: "#4A9BB8",
-          accent:    "#C9A96E",
-          "primary-light":   "#3A5F8C",
-          "primary-dark":    "#1E3350",
-          "secondary-light": "#6BB5CE",
-          "secondary-dark":  "#3382A0",
-          "accent-light":    "#D9BE8E",
-          "accent-dark":     "#B08040",
+          primary:           "rgb(var(--brand-primary)   / <alpha-value>)",
+          secondary:         "rgb(var(--brand-secondary) / <alpha-value>)",
+          accent:            "rgb(var(--brand-accent)    / <alpha-value>)",
+          "primary-light":   "rgb(var(--brand-primary-light)   / <alpha-value>)",
+          "primary-dark":    "rgb(var(--brand-primary-dark)    / <alpha-value>)",
+          "secondary-light": "rgb(var(--brand-secondary-light) / <alpha-value>)",
+          "secondary-dark":  "rgb(var(--brand-secondary-dark)  / <alpha-value>)",
+          "accent-light":    "rgb(var(--brand-accent-light)    / <alpha-value>)",
+          "accent-dark":     "rgb(var(--brand-accent-dark)     / <alpha-value>)",
         },
         // shadcn/ui semantic tokens (CSS variable–driven)
         border:      "hsl(var(--border))",
@@ -110,13 +110,13 @@ const config: Config = {
         shimmer:           "shimmer 2s infinite linear",
       },
       backgroundImage: {
-        "gradient-brand": "linear-gradient(135deg, #2C4A6E 0%, #4A9BB8 100%)",
-        "gradient-accent": "linear-gradient(135deg, #C9A96E 0%, #D9BE8E 100%)",
+        "gradient-brand":  "linear-gradient(135deg, rgb(var(--brand-primary)) 0%, rgb(var(--brand-secondary)) 100%)",
+        "gradient-accent": "linear-gradient(135deg, rgb(var(--brand-accent)) 0%, rgb(var(--brand-accent-light)) 100%)",
       },
       boxShadow: {
-        card:   "0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07)",
+        card:      "0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07)",
         "card-lg": "0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07)",
-        glass:  "0 8px 32px 0 rgba(44, 74, 110, 0.12)",
+        glass:     "0 8px 32px 0 rgb(var(--brand-primary) / 0.12)",
       },
     },
   },

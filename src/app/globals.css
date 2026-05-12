@@ -4,19 +4,20 @@
 
 @layer base {
   :root {
+    /* ── shadcn/ui semantic tokens ── */
     --background:   0 0% 98%;
     --foreground:   215 28% 17%;
     --card:         0 0% 100%;
     --card-foreground: 215 28% 17%;
     --popover:      0 0% 100%;
     --popover-foreground: 215 28% 17%;
-    --primary:      213 43% 30%;   /* #2C4A6E */
+    --primary:      213 43% 30%;
     --primary-foreground: 0 0% 98%;
-    --secondary:    197 44% 50%;   /* #4A9BB8 */
+    --secondary:    197 44% 50%;
     --secondary-foreground: 0 0% 98%;
     --muted:        210 20% 96%;
     --muted-foreground: 215 16% 47%;
-    --accent:       35 44% 61%;    /* #C9A96E */
+    --accent:       35 44% 61%;
     --accent-foreground: 215 28% 17%;
     --destructive:  0 84% 60%;
     --destructive-foreground: 0 0% 98%;
@@ -24,6 +25,17 @@
     --input:        214 32% 91%;
     --ring:         213 43% 30%;
     --radius:       0.625rem;
+
+    /* ── Brand color channels (RGB, space-separated for Tailwind opacity support) ── */
+    --brand-primary:          44 74 110;    /* #2C4A6E */
+    --brand-primary-light:    58 95 140;    /* #3A5F8C */
+    --brand-primary-dark:     30 51 80;     /* #1E3350 */
+    --brand-secondary:        74 155 184;   /* #4A9BB8 */
+    --brand-secondary-light:  107 181 206;  /* #6BB5CE */
+    --brand-secondary-dark:   51 130 160;   /* #3382A0 */
+    --brand-accent:           201 169 110;  /* #C9A96E */
+    --brand-accent-light:     217 190 142;  /* #D9BE8E */
+    --brand-accent-dark:      176 128 64;   /* #B08040 */
   }
 
   .dark {
@@ -49,11 +61,49 @@
   }
 }
 
+/* ── Pink theme ───────────────────────────────────────────────────────────── */
+
+.theme-pink {
+  /* shadcn/ui semantic tokens → deep rose */
+  --primary:            340 77% 42%;   /* #C2185B */
+  --primary-foreground: 0 0% 98%;
+  --secondary:          340 82% 63%;   /* #F06292 */
+  --secondary-foreground: 0 0% 98%;
+  --ring:               340 77% 42%;
+
+  /* Brand color channels → pink palette */
+  --brand-primary:          173 20 87;    /* #AD1457 */
+  --brand-primary-light:    194 24 91;    /* #C2185B */
+  --brand-primary-dark:     136 14 79;    /* #880E4F */
+  --brand-secondary:        233 30 99;    /* #E91E63 */
+  --brand-secondary-light:  240 98 146;   /* #F06292 */
+  --brand-secondary-dark:   194 24 91;    /* #C2185B */
+}
+
+.dark.theme-pink {
+  --primary:   340 77% 65%;
+  --ring:      340 77% 65%;
+  --secondary: 340 82% 58%;
+}
+
+/* Tailwind blue utility overrides in pink theme */
+.theme-pink .bg-blue-100  { background-color: rgb(252 231 243); } /* pink-100 */
+.theme-pink .text-blue-700 { color: rgb(190 24 93); }             /* pink-700 */
+.theme-pink .border-blue-200 { border-color: rgb(251 207 232); }  /* pink-200 */
+.theme-pink .ring-blue-500 { --tw-ring-color: rgb(236 72 153); }  /* pink-500 */
+
+.dark.theme-pink .dark\:bg-blue-900\/30 { background-color: rgb(136 14 79 / 0.3); }
+.dark.theme-pink .dark\:text-blue-400   { color: rgb(244 114 182); } /* pink-400 */
+
+/* SVG fill attribute overrides (Recharts chart bars + pie slices) */
+.theme-pink [fill="#2C4A6E"] { fill: #AD1457; }  /* brand-primary  → rose  */
+.theme-pink [fill="#4A9BB8"] { fill: #E91E63; }  /* brand-secondary → hot pink */
+.theme-pink [fill="#3B82F6"] { fill: #EC4899; }  /* blue-500 (Open status) → pink-500 */
+
 @layer base {
   * { @apply border-border; }
   body { @apply bg-background text-foreground; }
 
-  /* Scrollbar styling */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { @apply bg-transparent; }
   ::-webkit-scrollbar-thumb { @apply bg-muted-foreground/30 rounded-full; }
