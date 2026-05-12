@@ -10,7 +10,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { ColorThemeSwitcher } from "@/components/layout/ColorThemeSwitcher";
-import { SidebarVine, SleepingCat, SidebarBeardie } from "@/components/layout/LofiDecor";
 
 const NAV_ITEMS = [
   { href: "/",            icon: LayoutDashboard, label: "Dashboard"   },
@@ -31,11 +30,6 @@ export function Sidebar() {
       transition={{ duration: 0.2, ease: "easeInOut" }}
       className="relative flex flex-col h-screen bg-brand-primary text-white shrink-0 overflow-hidden"
     >
-      {/* Lofi: vertical vine along left edge */}
-      <div className="lofi-decor">
-        <SidebarVine />
-      </div>
-
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-white/10">
         <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/15 text-white font-bold text-lg shrink-0">
@@ -100,12 +94,6 @@ export function Sidebar() {
       {/* Color theme switcher */}
       <div className="px-2 pb-1">
         <ColorThemeSwitcher collapsed={collapsed} />
-      </div>
-
-      {/* Lofi: bearded dragon + sleeping cat */}
-      <div className="lofi-decor flex justify-center items-end gap-1 px-1 shrink-0">
-        <SidebarBeardie />
-        <SleepingCat />
       </div>
 
       {/* User profile */}

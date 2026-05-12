@@ -5,7 +5,6 @@ import { useTheme } from "next-themes";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { HeaderVine, HeaderSnake } from "@/components/layout/LofiDecor";
 
 interface HeaderProps {
   greeting:  string;
@@ -86,11 +85,7 @@ export function Header({ greeting, subtitle, onRefresh, refreshing, rightSlot }:
           </button>
         </div>
       </div>
-      {/* Lofi: vines + snake in the right corner, pink theme only */}
-      <div className="lofi-decor">
-        <HeaderVine />
-        <HeaderSnake />
-      </div>
+
     </header>
   );
 }

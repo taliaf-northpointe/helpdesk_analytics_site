@@ -99,8 +99,13 @@
 .theme-pink [fill="#4A9BB8"] { fill: #FFA6C9; }
 .theme-pink [fill="#3B82F6"] { fill: #DB7093; }
 .theme-pink [fill="#F59E0B"] { fill: #FFA6C9; }  /* In Progress: amber → pink */
-.theme-pink [fill="#8B5CF6"] { fill: #FFBDD7; }  /* On Hold: purple → light pink */
+.theme-pink [fill="#8B5CF6"] { fill: #FFB2D0; }  /* On Hold: purple → mid pink */
 .theme-pink [fill="#10B981"] { fill: #C95C7A; }  /* Resolved: green → deep rose */
+
+/* Recharts legend + axis text → dark gray in pink theme */
+.theme-pink .recharts-legend-item-text { color: #374151 !important; }
+.theme-pink .recharts-cartesian-axis-tick-value { fill: #374151 !important; }
+.theme-pink .recharts-label { fill: #374151 !important; }
 
 /* Lofi decorations: only visible in pink theme */
 .lofi-decor { display: none; }
