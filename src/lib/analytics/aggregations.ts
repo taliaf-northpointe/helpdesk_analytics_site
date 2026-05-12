@@ -10,8 +10,11 @@ import { format, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval } fr
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
-const isOpen     = (s: string) => s === "OPEN" || s === "IN_PROGRESS";
-const isResolved = (s: string) => s === "RESOLVED" || s === "CLOSED";
+const OPEN_STATUSES     = ["Open", "Pending Requester Response", "On Hold / Waiting for Vendor",
+  "Awaiting CAB", "Awaiting Peer Review", "Awaiting prod sign-off", "Awaiting Vendor Action"];
+const RESOLVED_STATUSES = ["Closed", "Cancelled"];
+const isOpen     = (s: string) => OPEN_STATUSES.includes(s);
+const isResolved = (s: string) => RESOLVED_STATUSES.includes(s);
 
 // ─── Filter helpers ───────────────────────────────────────────────────────────
 
@@ -65,10 +68,10 @@ export async function getKPIs(period: TimePeriod, filters?: ReportFilters): Prom
 
   const totalCurr = Object.values(c).reduce((a, b) => a + b, 0);
   const totalPrev = Object.values(p).reduce((a, b) => a + b, 0);
-  const openCurr   = c.OPEN ?? 0;
-  const openPrev   = p.OPEN ?? 0;
-  const closedCurr = (c.CLOSED ?? 0) + (c.RESOLVED ?? 0);
-  const closedPrev = (p.CLOSED ?? 0) + (p.RESOLVED ?? 0);
+  const openCurr   = c["Open"] ?? 0;
+  const openPrev   = p["Open"] ?? 0;
+  const closedCurr = (c["Closed"] ?? 0) + (c["Cancelled"] ?? 0);
+  const closedPrev = (p["Closed"] ?? 0) + (p["Cancelled"] ?? 0);
 
   const [breachCount, prevBreachCount, avgResRaw, prevAvgResRaw] = await Promise.all([
     prisma.ticket.count({ where: { ...where,     slaBreach: true } }),
@@ -89,8 +92,8 @@ export async function getKPIs(period: TimePeriod, filters?: ReportFilters): Prom
     slaCompliance:     slaCurr,
     avgResolutionTime: resCurr,
     slaBreaches:       breachCount,
-    inProgressTickets: c.IN_PROGRESS ?? 0,
-    resolvedTickets:   c.RESOLVED ?? 0,
+    inProgressTickets: OPEN_STATUSES.filter(s => s !== "Open").reduce((sum, s) => sum + (c[s] ?? 0), 0),
+    resolvedTickets:   c["Closed"] ?? 0,
     deltaTotal:        calcDelta(totalCurr, totalPrev),
     deltaOpen:         calcDelta(openCurr, openPrev),
     deltaClosed:       calcDelta(closedCurr, closedPrev),
@@ -143,14 +146,7 @@ export async function getStatusBreakdown(period: TimePeriod, filters?: ReportFil
     where: buildWhere({ from, to }, filters),
     _count: { status: true },
   });
-  const m = Object.fromEntries(rows.map((r) => [r.status, r._count.status]));
-  return {
-    open:       m.OPEN        ?? 0,
-    inProgress: m.IN_PROGRESS ?? 0,
-    onHold:     m.ON_HOLD     ?? 0,
-    resolved:   m.RESOLVED    ?? 0,
-    closed:     m.CLOSED      ?? 0,
-  };
+  return Object.fromEntries(rows.map((r) => [r.status, r._count.status]));
 }
 
 // ─── Priority breakdown ───────────────────────────────────────────────────────

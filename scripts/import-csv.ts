@@ -168,7 +168,7 @@ async function main() {
     if (!createdAt) continue;
 
     const resolvedAt = parseDate(resolvedStr);
-    const status     = resolvedAt ? "RESOLVED" : "OPEN";
+    const status     = resolvedAt ? "Closed" : "Open";
     const cfg        = SLA_CONFIG[slaName] ?? null;
     const priority   = cfg?.priority ?? "MEDIUM";
 

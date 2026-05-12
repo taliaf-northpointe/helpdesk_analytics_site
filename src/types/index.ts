@@ -1,4 +1,13 @@
-export type TicketStatus  = "OPEN" | "IN_PROGRESS" | "ON_HOLD" | "RESOLVED" | "CLOSED";
+export type TicketStatus =
+  | "Open"
+  | "Pending Requester Response"
+  | "On Hold / Waiting for Vendor"
+  | "Closed"
+  | "Cancelled"
+  | "Awaiting CAB"
+  | "Awaiting Peer Review"
+  | "Awaiting prod sign-off"
+  | "Awaiting Vendor Action";
 export type TicketPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 export type UserRole       = "ADMIN" | "ANALYST" | "VIEWER";
 
@@ -60,13 +69,7 @@ export interface TechnicianPerformance {
   avgResolutionHours: number;
 }
 
-export interface StatusBreakdown {
-  open:       number;
-  inProgress: number;
-  onHold:     number;
-  resolved:   number;
-  closed:     number;
-}
+export type StatusBreakdown = Record<string, number>;
 
 export interface PriorityBreakdown {
   low:    number;

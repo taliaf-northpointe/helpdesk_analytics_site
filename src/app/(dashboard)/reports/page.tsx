@@ -33,11 +33,15 @@ const PRIORITIES = [
 ];
 
 const STATUSES = [
-  { value: "OPEN",        label: "Open"        },
-  { value: "IN_PROGRESS", label: "In Progress" },
-  { value: "ON_HOLD",     label: "On Hold"     },
-  { value: "RESOLVED",    label: "Resolved"    },
-  { value: "CLOSED",      label: "Closed"      },
+  { value: "Open",                          label: "Open"                          },
+  { value: "Pending Requester Response",    label: "Pending Requester Response"    },
+  { value: "On Hold / Waiting for Vendor",  label: "On Hold / Waiting for Vendor"  },
+  { value: "Closed",                        label: "Closed"                        },
+  { value: "Cancelled",                     label: "Cancelled"                     },
+  { value: "Awaiting CAB",                  label: "Awaiting CAB"                  },
+  { value: "Awaiting Peer Review",          label: "Awaiting Peer Review"          },
+  { value: "Awaiting prod sign-off",        label: "Awaiting prod sign-off"        },
+  { value: "Awaiting Vendor Action",        label: "Awaiting Vendor Action"        },
 ];
 
 interface FilterOptions {

@@ -88,20 +88,40 @@ export function getGreeting(): string {
 
 // ─── Status / Priority display ───────────────────────────────────────────────
 
+export const ALL_STATUSES = [
+  "Open",
+  "Pending Requester Response",
+  "On Hold / Waiting for Vendor",
+  "Closed",
+  "Cancelled",
+  "Awaiting CAB",
+  "Awaiting Peer Review",
+  "Awaiting prod sign-off",
+  "Awaiting Vendor Action",
+] as const;
+
 export const STATUS_LABELS: Record<string, string> = {
-  OPEN:        "Open",
-  IN_PROGRESS: "In Progress",
-  ON_HOLD:     "On Hold",
-  RESOLVED:    "Resolved",
-  CLOSED:      "Closed",
+  "Open":                          "Open",
+  "Pending Requester Response":    "Pending Requester Response",
+  "On Hold / Waiting for Vendor":  "On Hold / Waiting for Vendor",
+  "Closed":                        "Closed",
+  "Cancelled":                     "Cancelled",
+  "Awaiting CAB":                  "Awaiting CAB",
+  "Awaiting Peer Review":          "Awaiting Peer Review",
+  "Awaiting prod sign-off":        "Awaiting prod sign-off",
+  "Awaiting Vendor Action":        "Awaiting Vendor Action",
 };
 
 export const STATUS_COLORS: Record<string, string> = {
-  OPEN:        "bg-blue-100  text-blue-700  dark:bg-blue-900/30  dark:text-blue-400",
-  IN_PROGRESS: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  ON_HOLD:     "bg-gray-100  text-gray-700  dark:bg-gray-800      dark:text-gray-400",
-  RESOLVED:    "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  CLOSED:      "bg-slate-100 text-slate-600 dark:bg-slate-800    dark:text-slate-400",
+  "Open":                          "bg-blue-50    text-blue-700",
+  "Pending Requester Response":    "bg-amber-50   text-amber-800",
+  "On Hold / Waiting for Vendor":  "bg-orange-50  text-orange-700",
+  "Closed":                        "bg-slate-100  text-slate-600",
+  "Cancelled":                     "bg-red-50     text-red-700",
+  "Awaiting CAB":                  "bg-violet-50  text-violet-700",
+  "Awaiting Peer Review":          "bg-teal-50    text-teal-700",
+  "Awaiting prod sign-off":        "bg-green-50   text-green-700",
+  "Awaiting Vendor Action":        "bg-blush      text-rose-800",
 };
 
 export const PRIORITY_LABELS: Record<string, string> = {

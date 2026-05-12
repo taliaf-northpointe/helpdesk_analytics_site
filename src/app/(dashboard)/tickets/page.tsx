@@ -24,7 +24,18 @@ interface TicketsResponse {
   pagination: { page: number; pageSize: number; total: number; pages: number };
 }
 
-const STATUS_OPTIONS  = ["", "OPEN", "IN_PROGRESS", "ON_HOLD", "RESOLVED", "CLOSED"];
+const STATUS_OPTIONS = [
+  "",
+  "Open",
+  "Pending Requester Response",
+  "On Hold / Waiting for Vendor",
+  "Closed",
+  "Cancelled",
+  "Awaiting CAB",
+  "Awaiting Peer Review",
+  "Awaiting prod sign-off",
+  "Awaiting Vendor Action",
+];
 const PRIORITY_OPTIONS = ["", "URGENT", "HIGH", "MEDIUM", "LOW"];
 
 export default function TicketsPage() {

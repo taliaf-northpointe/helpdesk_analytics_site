@@ -70,6 +70,7 @@ const config: Config = {
           closed:     "#6B7280",
           breach:     "#EF4444",
         },
+        blush: "#ffebef",
       },
       fontFamily: {
         sans: ["Inter", "var(--font-inter)", ...fontFamily.sans],
