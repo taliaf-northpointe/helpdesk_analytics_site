@@ -12,9 +12,13 @@
  *   - Lookup by display_id requires a search; detail fetch needs the INTERNAL id
  */
 
+import https from "https";
 import axios, { type AxiosInstance } from "axios";
 import pRetry from "p-retry";
 import pLimit from "p-limit";
+
+// Corporate proxy uses a self-signed/internal CA — bypass cert verification for SDP requests only
+const corporateAgent = new https.Agent({ rejectUnauthorized: false });
 
 // ─── Token cache ──────────────────────────────────────────────────────────────
 
@@ -35,7 +39,7 @@ async function getZohoAccessToken(): Promise<string> {
   const res = await axios.post<{ access_token: string; expires_in: number }>(
     "https://accounts.zoho.com/oauth/v2/token",
     params.toString(),
-    { headers: { "Content-Type": "application/x-www-form-urlencoded" } },
+    { headers: { "Content-Type": "application/x-www-form-urlencoded" }, httpsAgent: corporateAgent },
   );
 
   cachedToken = {
@@ -59,6 +63,7 @@ function createInstance(accessToken: string): AxiosInstance {
       Accept:        "application/vnd.manageengine.sdp.v3+json",
     },
     timeout: 30_000,
+    httpsAgent: corporateAgent,
   });
 }
 

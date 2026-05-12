@@ -11,14 +11,34 @@ export default function SettingsPage() {
   const [portalName,    setPortalName]    = useState("");
   const [syncInterval,  setSyncInterval]  = useState("15");
   const [syncing,       setSyncing]       = useState(false);
-  const [syncStatus,    setSyncStatus]    = useState<{ lastSync: string | null; ticketCount: number; status: string } | null>(null);
+  const [syncStatus,    setSyncStatus]    = useState<{ lastSync: string | null; ticketCount: number; status: string; errorMessage?: string | null } | null>(null);
 
-  useEffect(() => {
+  const fetchStatus = () =>
     fetch("/api/sync")
       .then((r) => r.json())
       .then((d) => setSyncStatus(d as typeof syncStatus))
       .catch(() => {});
-  }, []);
+
+  useEffect(() => { void fetchStatus(); }, []);
+
+  // Poll while a sync is running
+  useEffect(() => {
+    if (!syncing) return;
+    const id = setInterval(async () => {
+      const r = await fetch("/api/sync").then((r) => r.json()) as typeof syncStatus;
+      setSyncStatus(r);
+      if (r?.status === "COMPLETED") {
+        clearInterval(id);
+        setSyncing(false);
+        toast.success(`Sync complete — ${r.ticketCount?.toLocaleString()} tickets in database.`);
+      } else if (r?.status === "FAILED") {
+        clearInterval(id);
+        setSyncing(false);
+        toast.error(r.errorMessage ?? "Sync failed");
+      }
+    }, 3000);
+    return () => clearInterval(id);
+  }, [syncing]);
 
   const triggerSync = async (type: "FULL" | "INCREMENTAL") => {
     setSyncing(true);
@@ -28,13 +48,14 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ type }),
       });
-      const data = await res.json() as { success?: boolean; ticketCount?: number; error?: string };
-      if (data.success) toast.success(`Sync complete — ${data.ticketCount?.toLocaleString()} tickets processed.`);
-      else toast.error(data.error ?? "Sync failed");
+      const data = await res.json() as { started?: boolean; error?: string };
+      if (!data.started) {
+        setSyncing(false);
+        toast.error(data.error ?? "Failed to start sync");
+      }
     } catch {
-      toast.error("Sync request failed");
-    } finally {
       setSyncing(false);
+      toast.error("Sync request failed");
     }
   };
 
@@ -74,6 +95,7 @@ export default function SettingsPage() {
               <span>{syncStatus.ticketCount?.toLocaleString() ?? 0} tickets in database</span>
               <span>·</span>
               <span>Last sync: {syncStatus.lastSync ? new Date(syncStatus.lastSync).toLocaleString() : "Never"}</span>
+              {syncing && <span className="ml-auto text-brand-secondary font-medium animate-pulse">Syncing…</span>}
             </div>
           )}
           <div className="flex gap-3">

@@ -143,9 +143,9 @@ export async function runSync(type: string = "INCREMENTAL") {
         searchCriteria = [{ field: "created_time", condition: "greater than", value: { value: String(since.getTime()) } }];
       }
     } else {
-      // FULL: last 90 days
-      const ninetyDaysAgo = new Date(Date.now() - 90 * 86400_000);
-      searchCriteria = [{ field: "created_time", condition: "greater than", value: { value: String(ninetyDaysAgo.getTime()) } }];
+      // FULL: all tickets since 2025-01-01 (full historical baseline)
+      const historicalStart = new Date("2025-01-01T00:00:00.000Z");
+      searchCriteria = [{ field: "created_time", condition: "greater than", value: { value: String(historicalStart.getTime()) } }];
     }
 
     const sdpTickets = await sdpPaginate<SDPTicket>("/requests", "requests", 100, searchCriteria);

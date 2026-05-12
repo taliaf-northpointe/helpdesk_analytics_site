@@ -4,20 +4,27 @@ import { authOptions } from "@/lib/auth/config";
 import { runSync } from "@/lib/integrations/servicedesk-plus/sync";
 import prisma from "@/lib/db/prisma";
 
-// Trigger a manual sync
+// Allow up to 5 minutes for the sync route (Vercel Pro / self-hosted)
+export const maxDuration = 300;
+
+// Module-level ref prevents the promise from being GC'd mid-flight
+let activeSyncPromise: Promise<unknown> | null = null;
+
+// Trigger a manual sync — returns immediately; client should poll GET for status
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  if (activeSyncPromise) {
+    return NextResponse.json({ error: "Sync already in progress" }, { status: 409 });
+  }
+
   const { type = "INCREMENTAL" } = await req.json().catch(() => ({})) as { type?: string };
   const syncType = type === "FULL" ? "FULL" : "INCREMENTAL";
 
-  try {
-    const result = await runSync(syncType);
-    return NextResponse.json(result);
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
-  }
+  activeSyncPromise = runSync(syncType).finally(() => { activeSyncPromise = null; });
+
+  return NextResponse.json({ started: true, type: syncType }, { status: 202 });
 }
 
 // Get sync status
