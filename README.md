@@ -1,4 +1,4 @@
-# Northpointe Help Desk Analytics Dashboard
+﻿# Northpointe Help Desk Analytics Dashboard
 
 A production-ready full-stack ticket analytics platform built for Northpointe Bank IT. Integrates live with ServiceDesk Plus Cloud (SDP On-Demand), provides real-time KPI dashboards, SLA monitoring, and an AI chatbot powered by Claude that queries your live ticket data.
 
@@ -107,19 +107,19 @@ docker compose --profile tools up
 
 ```
 Azure App Service (Node 20)
-  └── northpointe-helpdesk (Docker container)
-        ├── Next.js app (port 3000)
-        └── Connects to:
-             ├── Azure Database for PostgreSQL (Flexible Server)
-             ├── Azure AD (Entra ID) for SSO
-             └── Anthropic API + SDP Cloud (external)
+  â””â”€â”€ northpointe-helpdesk (Docker container)
+        â”œâ”€â”€ Next.js app (port 3000)
+        â””â”€â”€ Connects to:
+             â”œâ”€â”€ Azure Database for PostgreSQL (Flexible Server)
+             â”œâ”€â”€ Azure AD (Entra ID) for SSO
+             â””â”€â”€ Anthropic API + SDP Cloud (external)
 ```
 
 ### Steps
 
-1. **Azure Database for PostgreSQL** — Create a Flexible Server instance, set `DATABASE_URL` in App Service config.
-2. **Azure App Registration** — Register app, add redirect URI: `https://<your-app>.azurewebsites.net/api/auth/callback/azure-ad`. Copy client ID/secret/tenant ID.
-3. **Azure App Service** — Create Web App (Docker/Linux), configure all env vars under Configuration > Application Settings.
+1. **Azure Database for PostgreSQL** â€” Create a Flexible Server instance, set `DATABASE_URL` in App Service config.
+2. **Azure App Registration** â€” Register app, add redirect URI: `https://<your-app>.azurewebsites.net/api/auth/callback/azure-ad`. Copy client ID/secret/tenant ID.
+3. **Azure App Service** â€” Create Web App (Docker/Linux), configure all env vars under Configuration > Application Settings.
 4. **Deploy**:
    ```bash
    # Via Azure Container Registry
@@ -134,38 +134,38 @@ Azure App Service (Node 20)
 
 ```
 src/
-├── app/
-│   ├── (auth)/login/          # Azure AD login page
-│   ├── (dashboard)/           # All authenticated pages (guarded by layout)
-│   │   ├── page.tsx            # Main dashboard
-│   │   ├── tickets/            # Ticket browser
-│   │   ├── analytics/          # Advanced analytics
-│   │   ├── reports/            # Report builder
-│   │   ├── sla-monitor/        # SLA tracking
-│   │   └── settings/           # Admin settings + sync
-│   └── api/
-│       ├── auth/[...nextauth]/ # NextAuth handler
-│       ├── analytics/dashboard/ # KPIs + dashboard data
-│       ├── tickets/            # Ticket list + filter API
-│       ├── chat/               # Claude chatbot API
-│       └── sync/               # SDP sync trigger + status
-├── components/
-│   ├── layout/                 # Sidebar, Header, ThemeProvider
-│   ├── dashboard/              # KPICard, charts, tables, footer
-│   └── chatbot/                # ChatWidget (floating AI assistant)
-├── lib/
-│   ├── analytics/aggregations.ts  # Prisma-based KPI queries
-│   ├── auth/config.ts              # NextAuth + Azure AD config
-│   ├── claude/chat.ts              # Claude with live SDP tool use
-│   ├── db/prisma.ts                # Prisma client singleton
-│   ├── integrations/servicedesk-plus/
-│   │   ├── client.ts          # Zoho OAuth2 + SDP API client
-│   │   └── sync.ts            # Full/incremental sync engine
-│   └── utils.ts                   # Date, number, formatting helpers
-├── types/index.ts                  # All shared TypeScript types
+â”œâ”€â”€ app/
+â”‚   â”œâ”€â”€ (auth)/login/          # Azure AD login page
+â”‚   â”œâ”€â”€ (dashboard)/           # All authenticated pages (guarded by layout)
+â”‚   â”‚   â”œâ”€â”€ page.tsx            # Main dashboard
+â”‚   â”‚   â”œâ”€â”€ tickets/            # Ticket browser
+â”‚   â”‚   â”œâ”€â”€ analytics/          # Advanced analytics
+â”‚   â”‚   â”œâ”€â”€ reports/            # Report builder
+â”‚   â”‚   â”œâ”€â”€ sla-monitor/        # SLA tracking
+â”‚   â”‚   â””â”€â”€ settings/           # Admin settings + sync
+â”‚   â””â”€â”€ api/
+â”‚       â”œâ”€â”€ auth/[...nextauth]/ # NextAuth handler
+â”‚       â”œâ”€â”€ analytics/dashboard/ # KPIs + dashboard data
+â”‚       â”œâ”€â”€ tickets/            # Ticket list + filter API
+â”‚       â”œâ”€â”€ chat/               # Claude chatbot API
+â”‚       â””â”€â”€ sync/               # SDP sync trigger + status
+â”œâ”€â”€ components/
+â”‚   â”œâ”€â”€ layout/                 # Sidebar, Header, ThemeProvider
+â”‚   â”œâ”€â”€ dashboard/              # KPICard, charts, tables, footer
+â”‚   â””â”€â”€ chatbot/                # ChatWidget (floating AI assistant)
+â”œâ”€â”€ lib/
+â”‚   â”œâ”€â”€ analytics/aggregations.ts  # Prisma-based KPI queries
+â”‚   â”œâ”€â”€ auth/config.ts              # NextAuth + Azure AD config
+â”‚   â”œâ”€â”€ claude/chat.ts              # Claude with live SDP tool use
+â”‚   â”œâ”€â”€ db/prisma.ts                # Prisma client singleton
+â”‚   â”œâ”€â”€ integrations/servicedesk-plus/
+â”‚   â”‚   â”œâ”€â”€ client.ts          # Zoho OAuth2 + SDP API client
+â”‚   â”‚   â””â”€â”€ sync.ts            # Full/incremental sync engine
+â”‚   â””â”€â”€ utils.ts                   # Date, number, formatting helpers
+â”œâ”€â”€ types/index.ts                  # All shared TypeScript types
 prisma/
-├── schema.prisma               # Full data model
-└── seed.ts                     # 6 months of sample ticket data
+â”œâ”€â”€ schema.prisma               # Full data model
+â””â”€â”€ seed.ts                     # 6 months of sample ticket data
 ```
 
 ---
@@ -182,7 +182,7 @@ Key API quirks handled in code:
 - Category/subcategory require explicit `fields_required` in `list_info`
 - Ticket lookup by display_id requires a search, then detail fetch by internal id
 
-The chatbot queries SDP directly via tool use — no caching delay. It supports:
+The chatbot queries SDP directly via tool use â€” no caching delay. It supports:
 `count_tickets`, `tickets_by_group`, `tickets_by_technician`, `tickets_by_status`,
 `tickets_by_category`, `tickets_by_subcategory`, `ticket_trends`, `recent_tickets`, `lookup_ticket`
 
