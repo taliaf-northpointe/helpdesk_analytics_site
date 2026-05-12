@@ -138,8 +138,8 @@ export async function runSync(type: string = "INCREMENTAL") {
   try {
     console.log(`[Sync] Starting ${type} sync (job ${job.id})...`);
 
-    // For incremental, add updatedtime filter
-    let filterData: Record<string, unknown> = {};
+    // For FULL sync, fetch last 90 days; for INCREMENTAL, fetch since last sync
+    let searchCriteria: Record<string, unknown>[] | undefined;
     if (type === "INCREMENTAL") {
       const lastJob = await prisma.syncJob.findFirst({
         where: { status: "COMPLETED", type: { in: ["FULL", "INCREMENTAL"] } },
@@ -147,18 +147,15 @@ export async function runSync(type: string = "INCREMENTAL") {
       });
       if (lastJob?.completedAt) {
         const since = new Date(lastJob.completedAt.getTime() - 60_000);
-        filterData = {
-          search_criteria: [{
-            field: "updatedtime",
-            condition: "greater than",
-            value: { value: since.getTime().toString() },
-          }],
-        };
+        searchCriteria = [{ field: "created_time", condition: "greater than", value: { value: String(since.getTime()) } }];
       }
+    } else {
+      // FULL: last 90 days
+      const ninetyDaysAgo = new Date(Date.now() - 90 * 86400_000);
+      searchCriteria = [{ field: "created_time", condition: "greater than", value: { value: String(ninetyDaysAgo.getTime()) } }];
     }
 
-    // Fetch all tickets (paginated) — filterData is not yet used here (future: pass to sdpGet directly)
-    const sdpTickets = await sdpPaginate<SDPTicket>("/requests", "requests");
+    const sdpTickets = await sdpPaginate<SDPTicket>("/requests", "requests", 100, searchCriteria);
 
     console.log(`[Sync] Fetched ${sdpTickets.length} tickets from SDP.`);
 

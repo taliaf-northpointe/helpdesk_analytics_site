@@ -1,3 +1,6 @@
+// Corporate proxy requires disabling TLS cert verification
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 import { config } from "dotenv";
 import { resolve } from "path";
 

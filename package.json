@@ -13,7 +13,8 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset --force && npm run db:seed"
+    "db:reset": "prisma migrate reset --force && npm run db:seed",
+    "sync": "tsx scripts/sync.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

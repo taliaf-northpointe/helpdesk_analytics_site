@@ -115,21 +115,26 @@ const LIST_FIELDS = [
 ];
 
 export async function sdpPaginate<T>(
-  path:     string,
-  listKey:  string,
+  path:            string,
+  listKey:         string,
   pageSize = 100,
+  searchCriteria?: Record<string, unknown>[],
 ): Promise<T[]> {
   const results: T[] = [];
   let page = 1;
 
   while (true) {
-    const data = await sdpGet<Record<string, unknown>>(path, {
+    const listInfo: Record<string, unknown> = {
       row_count:       pageSize,
       start_index:     (page - 1) * pageSize + 1,
       sort_field:      "id",
       sort_order:      "asc",
       fields_required: LIST_FIELDS,
-    });
+      get_total_count: true,
+    };
+    if (searchCriteria?.length) listInfo.search_criteria = searchCriteria;
+
+    const data = await sdpGet<Record<string, unknown>>(path, listInfo);
 
     const rows = (data[listKey] ?? []) as T[];
     results.push(...rows);
