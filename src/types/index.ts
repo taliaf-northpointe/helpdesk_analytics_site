@@ -1,6 +1,6 @@
-import type { TicketStatus, TicketPriority, UserRole } from "@prisma/client";
-
-export type { TicketStatus, TicketPriority, UserRole };
+export type TicketStatus  = "OPEN" | "IN_PROGRESS" | "ON_HOLD" | "RESOLVED" | "CLOSED";
+export type TicketPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+export type UserRole       = "ADMIN" | "ANALYST" | "VIEWER";
 
 // ─── KPI / Analytics ─────────────────────────────────────────────────────────
 

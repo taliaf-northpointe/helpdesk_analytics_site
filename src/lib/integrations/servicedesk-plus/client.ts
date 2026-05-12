@@ -27,9 +27,9 @@ async function getZohoAccessToken(): Promise<string> {
 
   const params = new URLSearchParams({
     grant_type:    "refresh_token",
-    refresh_token: process.env.SDP_ZOHO_REFRESH_TOKEN!,
-    client_id:     process.env.SDP_ZOHO_CLIENT_ID!,
-    client_secret: process.env.SDP_ZOHO_CLIENT_SECRET!,
+    refresh_token: (process.env.SDP_ZOHO_REFRESH_TOKEN ?? "").trim(),
+    client_id:     (process.env.SDP_ZOHO_CLIENT_ID     ?? "").trim(),
+    client_secret: (process.env.SDP_ZOHO_CLIENT_SECRET ?? "").trim(),
   });
 
   const res = await axios.post<{ access_token: string; expires_in: number }>(
@@ -49,9 +49,8 @@ async function getZohoAccessToken(): Promise<string> {
 // ─── Axios instance factory ───────────────────────────────────────────────────
 
 function createInstance(accessToken: string): AxiosInstance {
-  const baseUrl    = process.env.SDP_BASE_URL ?? "https://northpointe.sdpondemand.manageengine.com";
-  const portalName = process.env.SDP_PORTAL_NAME ?? "";
-  const apiBase    = portalName ? `/app/${portalName}/api/v3` : `/api/v3`;
+  const baseUrl = process.env.SDP_BASE_URL ?? "https://northpointe.sdpondemand.manageengine.com";
+  const apiBase = "/api/v3";
 
   return axios.create({
     baseURL: `${baseUrl}${apiBase}`,
@@ -112,7 +111,7 @@ export async function sdpGetTicket(internalId: string): Promise<Record<string, u
 const LIST_FIELDS = [
   "id", "display_id", "subject", "status", "technician",
   "group", "category", "subcategory", "requester", "priority",
-  "created_time", "resolved_time", "due_by_time", "is_overdue",
+  "created_time", "resolved_time", "closed_time", "due_by_time", "is_overdue", "sla",
 ];
 
 export async function sdpPaginate<T>(

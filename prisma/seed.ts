@@ -1,4 +1,7 @@
-import { PrismaClient, TicketStatus, TicketPriority, SyncType, SyncStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+
+type TicketStatus  = "OPEN" | "IN_PROGRESS" | "ON_HOLD" | "RESOLVED" | "CLOSED";
+type TicketPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 import { subDays, subMonths, startOfDay, addHours } from "date-fns";
 
 const prisma = new PrismaClient();
@@ -50,7 +53,7 @@ async function main() {
 
   // ── Seed sync job ────────────────────────────────────────────────────────────
   const seedJob = await prisma.syncJob.create({
-    data: { type: SyncType.FULL, status: SyncStatus.COMPLETED, completedAt: new Date() },
+    data: { type: "FULL", status: "COMPLETED", completedAt: new Date() },
   });
 
   // ── Tickets (180 days of history) ────────────────────────────────────────────
@@ -59,7 +62,7 @@ async function main() {
   const categories = [catHardware, catSoftware, catNetwork, catSecurity, catGeneral];
   const slas = [slaStandard, slaPriority, slaCritical];
 
-  const ticketsToCreate = [];
+  const ticketsToCreate: Record<string, unknown>[] = [];
   let externalCounter = 10000;
 
   for (let daysAgo = 180; daysAgo >= 0; daysAgo--) {
@@ -78,32 +81,34 @@ async function main() {
       const resMinutes = isResolved ? Math.floor(Math.random() * 2880) + 30 : undefined;
       const slaBreach = isResolved ? resMinutes! > sla.resolutionTime : false;
 
-      ticketsToCreate.push({
+      const ticket: Record<string, unknown> = {
         externalId: `sdp-${externalCounter++}`,
         subject: `Ticket ${externalCounter} – ${cat.name} issue`,
         status,
         priority,
         createdAt,
         updatedAt: createdAt,
-        resolvedAt: isResolved ? addHours(createdAt, (resMinutes ?? 60) / 60) : undefined,
         slaId: sla.id,
         slaBreach,
         groupId: group.id,
         technicianId: tech.id,
         categoryId: cat.id,
-        resolutionTimeMinutes: resMinutes,
         createdDay: dayDate.getDate(),
         createdMonth: dayDate.getMonth() + 1,
         createdYear: dayDate.getFullYear(),
         syncJobId: seedJob.id,
-      });
+      };
+      if (isResolved) ticket.resolvedAt = addHours(createdAt, (resMinutes ?? 60) / 60);
+      if (resMinutes != null) ticket.resolutionTimeMinutes = resMinutes;
+      ticketsToCreate.push(ticket);
     }
   }
 
   // Batch insert in chunks of 500
   const chunkSize = 500;
   for (let i = 0; i < ticketsToCreate.length; i += chunkSize) {
-    await prisma.ticket.createMany({ data: ticketsToCreate.slice(i, i + chunkSize), skipDuplicates: true });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await prisma.ticket.createMany({ data: ticketsToCreate.slice(i, i + chunkSize) as any });
   }
 
   console.log(`✅  Seeded ${ticketsToCreate.length} tickets across 6 months.`);

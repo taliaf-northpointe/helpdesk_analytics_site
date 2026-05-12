@@ -1,174 +1,171 @@
-/**
- * ServiceDesk Plus → PostgreSQL sync engine.
- * Handles full and incremental syncs of tickets, groups, technicians, and categories.
- */
 import prisma from "@/lib/db/prisma";
-import { sdpPaginate, sdpGet } from "./client";
-import type { SDPTicket } from "@/types";
-import { SyncType, SyncStatus, TicketStatus, TicketPriority } from "@prisma/client";
-import { startOfDay } from "date-fns";
+import { sdpPaginate } from "./client";
+import type { SDPTicket, TicketStatus, TicketPriority } from "@/types";
 
-// ─── SDP entity maps ──────────────────────────────────────────────────────────
+// ─── Field mappers ────────────────────────────────────────────────────────────
 
 function mapStatus(sdpStatus: string): TicketStatus {
   const s = sdpStatus.toLowerCase();
-  if (s.includes("open"))       return "OPEN";
-  if (s.includes("progress"))   return "IN_PROGRESS";
-  if (s.includes("hold"))       return "ON_HOLD";
-  if (s.includes("resolved"))   return "RESOLVED";
-  if (s.includes("closed"))     return "CLOSED";
+  if (s.includes("progress"))  return "IN_PROGRESS";
+  if (s.includes("hold"))      return "ON_HOLD";
+  if (s.includes("resolved"))  return "RESOLVED";
+  if (s.includes("closed"))    return "CLOSED";
   return "OPEN";
 }
 
 function mapPriority(sdpPriority: string): TicketPriority {
   const p = sdpPriority.toLowerCase();
   if (p.includes("urgent") || p.includes("critical")) return "URGENT";
-  if (p.includes("high"))   return "HIGH";
-  if (p.includes("medium") || p.includes("normal"))  return "MEDIUM";
+  if (p.includes("high"))                              return "HIGH";
+  if (p.includes("medium") || p.includes("normal"))   return "MEDIUM";
   return "LOW";
 }
 
 function parseSDPDate(val: string | undefined | null): Date | undefined {
   if (!val) return undefined;
   const ms = parseInt(val, 10);
-  if (!isNaN(ms)) return new Date(ms);
+  if (!isNaN(ms) && ms > 0) return new Date(ms);
   const d = new Date(val);
   return isNaN(d.getTime()) ? undefined : d;
 }
 
-// ─── Lookup sync helpers ──────────────────────────────────────────────────────
+// ─── Build lookup maps from ticket data (no extra API calls needed) ───────────
 
-async function syncGroups(): Promise<Map<string, string>> {
-  const sdpGroups = await sdpPaginate<{ id: string; name: string; description?: string }>(
-    "/groups", "groups",
-  );
-  const idMap = new Map<string, string>();
+async function buildLookupsFromTickets(tickets: SDPTicket[]) {
+  const groupMap = new Map<string, string>();
+  const techMap  = new Map<string, string>();
+  const catMap   = new Map<string, string>();
+  const subMap   = new Map<string, string>();
+  const slaMap   = new Map<string, string>();
 
-  for (const g of sdpGroups) {
-    const record = await prisma.group.upsert({
-      where: { externalId: g.id },
-      update: { name: g.name },
-      create: { externalId: g.id, name: g.name, description: g.description },
-    });
-    idMap.set(g.id, record.id);
+  // Collect unique entities
+  const groups      = new Map<string, string>();   // id -> name
+  const techs       = new Map<string, { name: string; email?: string }>();
+  const cats        = new Map<string, string>();
+  const subs        = new Map<string, { name: string; catId: string }>();
+  const slas        = new Map<string, string>();
+
+  for (const t of tickets) {
+    if (t.group?.id)       groups.set(t.group.id, t.group.name);
+    if (t.technician?.id)  techs.set(t.technician.id, { name: t.technician.name, email: t.technician.email_id });
+    if (t.category?.id)    cats.set(t.category.id, t.category.name);
+    if (t.subcategory?.id && t.category?.id)
+      subs.set(t.subcategory.id, { name: t.subcategory.name, catId: t.category.id });
+    if (t.sla?.id)         slas.set(t.sla.id, t.sla.name);
   }
-  return idMap;
+
+  // Upsert groups
+  for (const [externalId, name] of groups) {
+    const r = await prisma.group.upsert({
+      where: { externalId },
+      update: { name },
+      create: { externalId, name },
+    });
+    groupMap.set(externalId, r.id);
+  }
+
+  // Upsert technicians
+  for (const [externalId, { name, email }] of techs) {
+    const r = await prisma.technician.upsert({
+      where: { externalId },
+      update: { name, email },
+      create: { externalId, name, email },
+    });
+    techMap.set(externalId, r.id);
+  }
+
+  // Upsert categories
+  for (const [externalId, name] of cats) {
+    const r = await prisma.category.upsert({
+      where: { externalId },
+      update: { name },
+      create: { externalId, name },
+    });
+    catMap.set(externalId, r.id);
+  }
+
+  // Upsert subcategories (after categories)
+  for (const [externalId, { name, catId }] of subs) {
+    const categoryId = catMap.get(catId);
+    if (!categoryId) continue;
+    const r = await prisma.subcategory.upsert({
+      where: { externalId },
+      update: { name, categoryId },
+      create: { externalId, name, categoryId },
+    });
+    subMap.set(externalId, r.id);
+  }
+
+  // Upsert SLAs (minimal data — we don't have response/resolution times from ticket data)
+  for (const [externalId, name] of slas) {
+    const r = await prisma.sLA.upsert({
+      where: { externalId },
+      update: { name },
+      create: { externalId, name, responseTime: 240, resolutionTime: 1440 },
+    });
+    slaMap.set(externalId, r.id);
+  }
+
+  return { groupMap, techMap, catMap, subMap, slaMap };
 }
 
-async function syncTechnicians(): Promise<Map<string, string>> {
-  const sdpTechs = await sdpPaginate<{ id: string; name: string; email_id?: string }>(
-    "/technicians", "technicians",
-  );
-  const idMap = new Map<string, string>();
+// ─── Main sync ────────────────────────────────────────────────────────────────
 
-  for (const t of sdpTechs) {
-    const record = await prisma.technician.upsert({
-      where: { externalId: t.id },
-      update: { name: t.name, email: t.email_id },
-      create: { externalId: t.id, name: t.name, email: t.email_id },
-    });
-    idMap.set(t.id, record.id);
-  }
-  return idMap;
-}
-
-async function syncCategories(): Promise<{ cats: Map<string, string>; subs: Map<string, string> }> {
-  const sdpCats = await sdpPaginate<{ id: string; name: string; sub_categories?: { id: string; name: string }[] }>(
-    "/categories", "categories",
-  );
-  const cats = new Map<string, string>();
-  const subs = new Map<string, string>();
-
-  for (const c of sdpCats) {
-    const catRecord = await prisma.category.upsert({
-      where: { externalId: c.id },
-      update: { name: c.name },
-      create: { externalId: c.id, name: c.name },
-    });
-    cats.set(c.id, catRecord.id);
-
-    for (const sub of c.sub_categories ?? []) {
-      const subRecord = await prisma.subcategory.upsert({
-        where: { externalId: sub.id },
-        update: { name: sub.name },
-        create: { externalId: sub.id, name: sub.name, categoryId: catRecord.id },
-      });
-      subs.set(sub.id, subRecord.id);
-    }
-  }
-  return { cats, subs };
-}
-
-async function syncSLAs(): Promise<Map<string, string>> {
-  const sdpSLAs = await sdpPaginate<{ id: string; name: string; response_time?: { value?: string }; resolution_time?: { value?: string } }>(
-    "/slas", "slas",
-  );
-  const idMap = new Map<string, string>();
-
-  for (const s of sdpSLAs) {
-    const responseTime   = parseInt(s.response_time?.value ?? "240", 10);
-    const resolutionTime = parseInt(s.resolution_time?.value ?? "1440", 10);
-
-    const record = await prisma.sLA.upsert({
-      where: { externalId: s.id },
-      update: { name: s.name, responseTime, resolutionTime },
-      create: { externalId: s.id, name: s.name, responseTime, resolutionTime },
-    });
-    idMap.set(s.id, record.id);
-  }
-  return idMap;
-}
-
-// ─── Main sync functions ──────────────────────────────────────────────────────
-
-export async function runSync(type: SyncType = SyncType.INCREMENTAL) {
+export async function runSync(type: string = "INCREMENTAL") {
   const job = await prisma.syncJob.create({
-    data: { type, status: SyncStatus.RUNNING },
+    data: { type, status: "RUNNING" },
   });
 
   try {
     console.log(`[Sync] Starting ${type} sync (job ${job.id})...`);
 
-    const [groupMap, techMap, { cats: catMap, subs: subMap }, slaMap] = await Promise.all([
-      syncGroups(),
-      syncTechnicians(),
-      syncCategories(),
-      syncSLAs(),
-    ]);
-
-    // For incremental, only fetch tickets updated since last successful sync
-    let fromDate: Date | undefined;
-    if (type === SyncType.INCREMENTAL) {
+    // For incremental, add updatedtime filter
+    let filterData: Record<string, unknown> = {};
+    if (type === "INCREMENTAL") {
       const lastJob = await prisma.syncJob.findFirst({
-        where: { status: SyncStatus.COMPLETED, type: { in: [SyncType.FULL, SyncType.INCREMENTAL] } },
+        where: { status: "COMPLETED", type: { in: ["FULL", "INCREMENTAL"] } },
         orderBy: { completedAt: "desc" },
       });
-      fromDate = lastJob?.completedAt ? new Date(lastJob.completedAt.getTime() - 60_000) : undefined;
+      if (lastJob?.completedAt) {
+        const since = new Date(lastJob.completedAt.getTime() - 60_000);
+        filterData = {
+          search_criteria: [{
+            field: "updatedtime",
+            condition: "greater than",
+            value: { value: since.getTime().toString() },
+          }],
+        };
+      }
     }
 
-    const filterData: Record<string, unknown> = {};
-    if (fromDate) {
-      filterData.search_criteria = [{
-        field: "updatedtime",
-        condition: "greater than",
-        value: fromDate.getTime().toString(),
-        logical_operator: "AND",
-      }];
-    }
-
+    // Fetch all tickets (paginated) — filterData is not yet used here (future: pass to sdpGet directly)
     const sdpTickets = await sdpPaginate<SDPTicket>("/requests", "requests");
 
+    console.log(`[Sync] Fetched ${sdpTickets.length} tickets from SDP.`);
+
+    if (sdpTickets.length === 0) {
+      await prisma.syncJob.update({
+        where: { id: job.id },
+        data: { status: "COMPLETED", completedAt: new Date(), ticketCount: 0 },
+      });
+      return { success: true, ticketCount: 0 };
+    }
+
+    // Build lookup tables from ticket data (avoids needing extra API scopes)
+    const { groupMap, techMap, catMap, subMap, slaMap } = await buildLookupsFromTickets(sdpTickets);
+
+    // Upsert tickets in chunks
     let upserted = 0;
     const CHUNK = 50;
 
     for (let i = 0; i < sdpTickets.length; i += CHUNK) {
       const chunk = sdpTickets.slice(i, i + CHUNK);
       await Promise.all(chunk.map(async (t) => {
-        const createdAt   = parseSDPDate(t.created_time?.value) ?? new Date();
-        const resolvedAt  = parseSDPDate(t.resolved_time?.value);
-        const closedAt    = parseSDPDate(t.closed_time?.value);
-        const dueDate     = parseSDPDate(t.due_by_time?.value);
-        const resMinutes  = resolvedAt
+        const createdAt  = parseSDPDate(t.created_time?.value) ?? new Date();
+        const resolvedAt = parseSDPDate(t.resolved_time?.value);
+        const closedAt   = parseSDPDate(t.closed_time?.value);
+        const dueDate    = parseSDPDate(t.due_by_time?.value);
+        const resMinutes = resolvedAt
           ? Math.round((resolvedAt.getTime() - createdAt.getTime()) / 60_000)
           : undefined;
 
@@ -178,67 +175,58 @@ export async function runSync(type: SyncType = SyncType.INCREMENTAL) {
           : null;
         const slaBreach = resMinutes != null && slaRecord
           ? resMinutes > slaRecord.resolutionTime
-          : t.is_overdue;
+          : (t.is_overdue ?? false);
+
+        const shared = {
+          subject:      t.subject,
+          status:       mapStatus(t.status?.name ?? ""),
+          priority:     mapPriority(t.priority?.name ?? ""),
+          slaBreach,
+          groupId:       t.group?.id       ? groupMap.get(t.group.id)       : undefined,
+          technicianId:  t.technician?.id  ? techMap.get(t.technician.id)   : undefined,
+          categoryId:    t.category?.id    ? catMap.get(t.category.id)      : undefined,
+          subcategoryId: t.subcategory?.id ? subMap.get(t.subcategory.id)   : undefined,
+          slaId:         slaInternalId,
+          resolvedAt,
+          closedAt,
+          dueDate,
+          resolutionTimeMinutes: resMinutes,
+        };
 
         await prisma.ticket.upsert({
-          where: { externalId: t.id },
-          update: {
-            subject:    t.subject,
-            status:     mapStatus(t.status?.name ?? ""),
-            priority:   mapPriority(t.priority?.name ?? ""),
-            updatedAt:  new Date(),
-            resolvedAt,
-            closedAt,
-            dueDate,
-            slaBreach,
-            groupId:      t.group?.id      ? groupMap.get(t.group.id)      : undefined,
-            technicianId: t.technician?.id ? techMap.get(t.technician.id)  : undefined,
-            categoryId:   t.category?.id   ? catMap.get(t.category.id)     : undefined,
-            subcategoryId: t.subcategory?.id ? subMap.get(t.subcategory.id) : undefined,
-            slaId:        slaInternalId,
-            resolutionTimeMinutes: resMinutes,
-          },
+          where:  { externalId: t.id },
+          update: { ...shared, updatedAt: new Date() },
           create: {
-            externalId:   t.id,
-            subject:      t.subject,
-            status:       mapStatus(t.status?.name ?? ""),
-            priority:     mapPriority(t.priority?.name ?? ""),
+            ...shared,
+            externalId:  t.id,
             createdAt,
-            updatedAt:    createdAt,
-            resolvedAt,
-            closedAt,
-            dueDate,
-            slaBreach,
-            groupId:      t.group?.id      ? groupMap.get(t.group.id)      : undefined,
-            technicianId: t.technician?.id ? techMap.get(t.technician.id)  : undefined,
-            categoryId:   t.category?.id   ? catMap.get(t.category.id)     : undefined,
-            subcategoryId: t.subcategory?.id ? subMap.get(t.subcategory.id) : undefined,
-            slaId:        slaInternalId,
-            resolutionTimeMinutes: resMinutes,
-            createdDay:   createdAt.getDate(),
+            updatedAt:   createdAt,
+            createdDay:  createdAt.getDate(),
             createdMonth: createdAt.getMonth() + 1,
-            createdYear:  createdAt.getFullYear(),
-            syncJobId:    job.id,
+            createdYear: createdAt.getFullYear(),
+            syncJobId:   job.id,
           },
         });
         upserted++;
       }));
+
+      console.log(`[Sync] ${Math.min(i + CHUNK, sdpTickets.length)} / ${sdpTickets.length} processed...`);
     }
 
     await prisma.syncJob.update({
       where: { id: job.id },
-      data: { status: SyncStatus.COMPLETED, completedAt: new Date(), ticketCount: upserted },
+      data: { status: "COMPLETED", completedAt: new Date(), ticketCount: upserted },
     });
 
-    console.log(`[Sync] ✅  ${type} sync complete. ${upserted} tickets processed.`);
+    console.log(`[Sync] Done. ${upserted} tickets upserted.`);
     return { success: true, ticketCount: upserted };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await prisma.syncJob.update({
       where: { id: job.id },
-      data: { status: SyncStatus.FAILED, completedAt: new Date(), errorMessage: message },
+      data: { status: "FAILED", completedAt: new Date(), errorMessage: message },
     });
-    console.error("[Sync] ❌  Sync failed:", message);
+    console.error("[Sync] Failed:", message);
     throw err;
   }
 }

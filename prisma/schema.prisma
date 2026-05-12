@@ -3,13 +3,13 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 // Auth / Users
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 
 model Account {
   id                String  @id @default(cuid())
@@ -17,12 +17,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -46,14 +46,14 @@ model VerificationToken {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String        @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?       @unique
   emailVerified DateTime?
   image         String?
-  role          UserRole  @default(VIEWER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  role          String        @default("VIEWER")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   accounts      Account[]
   sessions      Session[]
   chatSessions  ChatSession[]
@@ -61,23 +61,17 @@ model User {
   @@map("users")
 }
 
-enum UserRole {
-  ADMIN
-  ANALYST
-  VIEWER
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 // Ticket domain
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 
 model Ticket {
-  id              String        @id @default(cuid())
-  externalId      String        @unique  // SDP request ID
+  id              String   @id @default(cuid())
+  externalId      String   @unique
   subject         String
-  description     String?       @db.Text
-  status          TicketStatus
-  priority        TicketPriority
+  description     String?
+  status          String
+  priority        String
   createdAt       DateTime
   updatedAt       DateTime
   resolvedAt      DateTime?
@@ -85,37 +79,33 @@ model Ticket {
   dueDate         DateTime?
   firstResponseAt DateTime?
 
-  // SLA
-  slaId           String?
-  sla             SLA?          @relation(fields: [slaId], references: [id])
-  slaBreach       Boolean       @default(false)
-  slaBreachAt     DateTime?
+  slaId       String?
+  sla         SLA?        @relation(fields: [slaId], references: [id])
+  slaBreach   Boolean     @default(false)
+  slaBreachAt DateTime?
 
-  // Relationships
-  groupId         String?
-  group           Group?        @relation(fields: [groupId], references: [id])
-  technicianId    String?
-  technician      Technician?   @relation(fields: [technicianId], references: [id])
-  categoryId      String?
-  category        Category?     @relation(fields: [categoryId], references: [id])
-  subcategoryId   String?
-  subcategory     Subcategory?  @relation(fields: [subcategoryId], references: [id])
+  groupId       String?
+  group         Group?      @relation(fields: [groupId], references: [id])
+  technicianId  String?
+  technician    Technician? @relation(fields: [technicianId], references: [id])
+  categoryId    String?
+  category      Category?   @relation(fields: [categoryId], references: [id])
+  subcategoryId String?
+  subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
 
-  // Metrics
-  resolutionTimeMinutes Int?
+  resolutionTimeMinutes    Int?
   firstResponseTimeMinutes Int?
-  ageingDays      Int?          // computed at sync time
+  ageingDays               Int?
 
-  // Raw data snapshot from SDP
-  rawData         Json?
+  rawData String?
 
-  history         TicketHistory[]
-  syncJobId       String?
-  syncJob         SyncJob?      @relation(fields: [syncJobId], references: [id])
+  history   TicketHistory[]
+  syncJobId String?
+  syncJob   SyncJob? @relation(fields: [syncJobId], references: [id])
 
-  createdDay      Int           // day-of-month for fast aggregation
-  createdMonth    Int           // 1-12
-  createdYear     Int
+  createdDay   Int
+  createdMonth Int
+  createdYear  Int
 
   @@index([status])
   @@index([groupId])
@@ -124,21 +114,6 @@ model Ticket {
   @@index([createdYear, createdMonth])
   @@index([slaBreach])
   @@map("tickets")
-}
-
-enum TicketStatus {
-  OPEN
-  IN_PROGRESS
-  ON_HOLD
-  RESOLVED
-  CLOSED
-}
-
-enum TicketPriority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
 }
 
 model TicketHistory {
@@ -155,34 +130,34 @@ model TicketHistory {
   @@map("ticket_history")
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 // Lookup tables synced from SDP
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 
 model Group {
-  id          String   @id @default(cuid())
-  externalId  String   @unique
+  id          String            @id @default(cuid())
+  externalId  String            @unique
   name        String
   description String?
-  isActive    Boolean  @default(true)
+  isActive    Boolean           @default(true)
   tickets     Ticket[]
   technicians TechnicianGroup[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@map("groups")
 }
 
 model Technician {
-  id         String   @id @default(cuid())
-  externalId String   @unique
+  id         String            @id @default(cuid())
+  externalId String            @unique
   name       String
   email      String?
-  isActive   Boolean  @default(true)
+  isActive   Boolean           @default(true)
   tickets    Ticket[]
   groups     TechnicianGroup[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
 
   @@map("technicians")
 }
@@ -198,14 +173,14 @@ model TechnicianGroup {
 }
 
 model Category {
-  id           String        @id @default(cuid())
-  externalId   String        @unique
-  name         String
-  isActive     Boolean       @default(true)
-  tickets      Ticket[]
+  id            String        @id @default(cuid())
+  externalId    String        @unique
+  name          String
+  isActive      Boolean       @default(true)
+  tickets       Ticket[]
   subcategories Subcategory[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@map("categories")
 }
@@ -225,28 +200,28 @@ model Subcategory {
 }
 
 model SLA {
-  id           String   @id @default(cuid())
-  externalId   String   @unique
-  name         String
-  responseTime Int      // minutes
-  resolutionTime Int    // minutes
-  isActive     Boolean  @default(true)
-  tickets      Ticket[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  externalId     String   @unique
+  name           String
+  responseTime   Int
+  resolutionTime Int
+  isActive       Boolean  @default(true)
+  tickets        Ticket[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@map("slas")
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Analytics cache (pre-aggregated for fast dashboard queries)
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Analytics cache
+// ---------------------------------------------------------------------------
 
 model AnalyticsSnapshot {
   id        String   @id @default(cuid())
-  period    String   // "daily" | "weekly" | "monthly" | "quarterly" | "yearly"
-  date      DateTime // start of period
-  data      Json     // aggregated KPI blob
+  period    String
+  date      DateTime
+  data      String
   createdAt DateTime @default(now())
 
   @@unique([period, date])
@@ -254,39 +229,26 @@ model AnalyticsSnapshot {
   @@map("analytics_snapshots")
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 // Sync jobs
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 
 model SyncJob {
-  id          String     @id @default(cuid())
-  type        SyncType
-  status      SyncStatus @default(PENDING)
-  startedAt   DateTime   @default(now())
-  completedAt DateTime?
-  ticketCount Int?
-  errorMessage String?   @db.Text
-  tickets     Ticket[]
+  id           String    @id @default(cuid())
+  type         String
+  status       String    @default("PENDING")
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  ticketCount  Int?
+  errorMessage String?
+  tickets      Ticket[]
 
   @@map("sync_jobs")
 }
 
-enum SyncType {
-  FULL
-  INCREMENTAL
-  MANUAL
-}
-
-enum SyncStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  FAILED
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 // Chatbot
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 
 model ChatSession {
   id        String        @id @default(cuid())
@@ -303,27 +265,21 @@ model ChatMessage {
   id        String      @id @default(cuid())
   sessionId String
   session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  role      MessageRole
-  content   String      @db.Text
+  role      String
+  content   String
   createdAt DateTime    @default(now())
 
   @@index([sessionId])
   @@map("chat_messages")
 }
 
-enum MessageRole {
-  USER
-  ASSISTANT
-  SYSTEM
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 // Admin configuration
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 
 model AppConfig {
   key       String   @id
-  value     String   @db.Text
+  value     String
   updatedAt DateTime @updatedAt
 
   @@map("app_config")

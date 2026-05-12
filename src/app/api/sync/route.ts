@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { runSync } from "@/lib/integrations/servicedesk-plus/sync";
-import { SyncType } from "@prisma/client";
 import prisma from "@/lib/db/prisma";
 
 // Trigger a manual sync
@@ -11,7 +10,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { type = "INCREMENTAL" } = await req.json().catch(() => ({})) as { type?: string };
-  const syncType = type === "FULL" ? SyncType.FULL : SyncType.INCREMENTAL;
+  const syncType = type === "FULL" ? "FULL" : "INCREMENTAL";
 
   try {
     const result = await runSync(syncType);

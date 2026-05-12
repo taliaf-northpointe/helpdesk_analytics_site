@@ -4,7 +4,14 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, X, Send, Minimize2, Maximize2, Loader2, Sparkles } from "lucide-react";
 import { cn, formatRelative } from "@/lib/utils";
-import { SUGGESTED_PROMPTS } from "@/lib/claude/chat";
+const SUGGESTED_PROMPTS = [
+  "How many tickets are open this week?",
+  "Which team has the most tickets this month?",
+  "Show me ticket trends for the last 30 days.",
+  "Break down tickets by category this month.",
+  "Which technician resolved the most tickets?",
+  "How many high-priority tickets are open?",
+];
 
 interface Message {
   id:        string;

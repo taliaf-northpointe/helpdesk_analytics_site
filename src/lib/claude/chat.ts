@@ -1,8 +1,4 @@
-/**
- * Claude chatbot with live ServiceDesk Plus data context.
- * Mirrors the logic of the n8n "Query Tickets Tool" flow but runs
- * server-side inside Next.js, querying SDP directly via Zoho OAuth2.
- */
+import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { sdpQuery, sdpGetTicket, type SDPPeriod, type SDPQueryOptions } from "@/lib/integrations/servicedesk-plus/client";
 
