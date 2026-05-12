@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* ── shadcn/ui semantic tokens ── */
+    /* shadcn/ui semantic tokens */
     --background:   0 0% 98%;
     --foreground:   215 28% 17%;
     --card:         0 0% 100%;
@@ -26,7 +26,7 @@
     --ring:         213 43% 30%;
     --radius:       0.625rem;
 
-    /* ── Brand color channels (RGB, space-separated for Tailwind opacity support) ── */
+    /* Brand color channels — space-separated RGB for Tailwind opacity support */
     --brand-primary:          44 74 110;    /* #2C4A6E */
     --brand-primary-light:    58 95 140;    /* #3A5F8C */
     --brand-primary-dark:     30 51 80;     /* #1E3350 */
@@ -61,44 +61,43 @@
   }
 }
 
-/* ── Pink theme ───────────────────────────────────────────────────────────── */
+/* Pink theme — exact colors: #DB7093 #FFA6C9 #FFBDD7 #FFE1ED */
 
 .theme-pink {
-  /* shadcn/ui semantic tokens → deep rose */
-  --primary:            340 77% 42%;   /* #C2185B */
-  --primary-foreground: 0 0% 98%;
-  --secondary:          340 82% 63%;   /* #F06292 */
-  --secondary-foreground: 0 0% 98%;
-  --ring:               340 77% 42%;
+  /* shadcn/ui semantic tokens */
+  --primary:              340 51% 65%;   /* #DB7093 */
+  --primary-foreground:   0 0% 100%;
+  --secondary:            337 100% 82%;  /* #FFA6C9 */
+  --secondary-foreground: 0 0% 100%;
+  --ring:                 340 51% 65%;
 
-  /* Brand color channels → pink palette */
-  --brand-primary:          173 20 87;    /* #AD1457 */
-  --brand-primary-light:    194 24 91;    /* #C2185B */
-  --brand-primary-dark:     136 14 79;    /* #880E4F */
-  --brand-secondary:        233 30 99;    /* #E91E63 */
-  --brand-secondary-light:  240 98 146;   /* #F06292 */
-  --brand-secondary-dark:   194 24 91;    /* #C2185B */
+  /* Brand color channels */
+  --brand-primary:          219 112 147;   /* #DB7093 */
+  --brand-primary-light:    255 166 201;   /* #FFA6C9 */
+  --brand-primary-dark:     167 66 102;    /* #A74266 */
+  --brand-secondary:        255 166 201;   /* #FFA6C9 */
+  --brand-secondary-light:  255 189 215;   /* #FFBDD7 */
+  --brand-secondary-dark:   219 112 147;   /* #DB7093 */
 }
 
 .dark.theme-pink {
-  --primary:   340 77% 65%;
-  --ring:      340 77% 65%;
-  --secondary: 340 82% 58%;
+  --primary:   340 51% 72%;
+  --ring:      340 51% 72%;
+  --secondary: 337 100% 85%;
 }
 
-/* Tailwind blue utility overrides in pink theme */
-.theme-pink .bg-blue-100  { background-color: rgb(252 231 243); } /* pink-100 */
-.theme-pink .text-blue-700 { color: rgb(190 24 93); }             /* pink-700 */
-.theme-pink .border-blue-200 { border-color: rgb(251 207 232); }  /* pink-200 */
-.theme-pink .ring-blue-500 { --tw-ring-color: rgb(236 72 153); }  /* pink-500 */
+/* Tailwind blue utility overrides */
+.theme-pink .bg-blue-100   { background-color: rgb(255 225 237); } /* #FFE1ED */
+.theme-pink .text-blue-700 { color: rgb(219 112 147); }            /* #DB7093 */
+.theme-pink .border-blue-200 { border-color: rgb(255 189 215); }   /* #FFBDD7 */
 
-.dark.theme-pink .dark\:bg-blue-900\/30 { background-color: rgb(136 14 79 / 0.3); }
-.dark.theme-pink .dark\:text-blue-400   { color: rgb(244 114 182); } /* pink-400 */
+.dark.theme-pink .dark\:bg-blue-900\/30 { background-color: rgb(167 66 102 / 0.3); }
+.dark.theme-pink .dark\:text-blue-400   { color: rgb(255 166 201); } /* #FFA6C9 */
 
-/* SVG fill attribute overrides (Recharts chart bars + pie slices) */
-.theme-pink [fill="#2C4A6E"] { fill: #AD1457; }  /* brand-primary  → rose  */
-.theme-pink [fill="#4A9BB8"] { fill: #E91E63; }  /* brand-secondary → hot pink */
-.theme-pink [fill="#3B82F6"] { fill: #EC4899; }  /* blue-500 (Open status) → pink-500 */
+/* Recharts SVG fill overrides */
+.theme-pink [fill="#2C4A6E"] { fill: #DB7093; }
+.theme-pink [fill="#4A9BB8"] { fill: #FFA6C9; }
+.theme-pink [fill="#3B82F6"] { fill: #DB7093; }
 
 @layer base {
   * { @apply border-border; }
