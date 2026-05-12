@@ -7,6 +7,11 @@ import type {
 } from "@/types";
 import { format, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval } from "date-fns";
 
+// ─── Status helpers ───────────────────────────────────────────────────────────
+
+const isOpen     = (s: string) => s === "OPEN" || s === "IN_PROGRESS";
+const isResolved = (s: string) => s === "RESOLVED" || s === "CLOSED";
+
 // ─── KPIs ─────────────────────────────────────────────────────────────────────
 
 export async function getKPIs(period: TimePeriod): Promise<KPIData> {
@@ -169,8 +174,8 @@ export async function getGroupPerformance(period: TimePeriod): Promise<GroupPerf
   return Array.from(merged.entries())
     .map(([name, { groupId, tickets }]) => {
       const total    = tickets.length;
-      const open     = tickets.filter((t) => t.status === "OPEN" || t.status === "IN_PROGRESS").length;
-      const closed   = tickets.filter((t) => t.status === "CLOSED" || t.status === "RESOLVED").length;
+      const open     = tickets.filter((t) => isOpen(t.status)).length;
+      const closed   = tickets.filter((t) => isResolved(t.status)).length;
       const breaches = tickets.filter((t) => t.slaBreach).length;
       const slaPercent = total > 0 ? Math.round(((total - breaches) / total) * 1000) / 10 : 100;
       const resTickets = tickets.filter((t) => t.resolutionTimeMinutes != null);
@@ -243,7 +248,6 @@ export async function getTechnicianPerformance(period: TimePeriod): Promise<Tech
   const { from, to } = getDateRange(period);
 
   const technicians = await prisma.technician.findMany({
-    where: { isActive: true },
     include: {
       tickets: {
         where: { createdAt: { gte: from, lte: to } },
@@ -252,26 +256,37 @@ export async function getTechnicianPerformance(period: TimePeriod): Promise<Tech
     },
   });
 
-  return technicians
-    .filter((t) => t.tickets.length > 0)
-    .map((t) => {
-      const resolved = t.tickets.filter((tk) => tk.status === "RESOLVED" || tk.status === "CLOSED").length;
-      const open     = t.tickets.filter((tk) => tk.status === "OPEN" || tk.status === "IN_PROGRESS").length;
-      const breaches = t.tickets.filter((tk) => tk.slaBreach).length;
-      const slaPercent = t.tickets.length > 0
-        ? Math.round(((t.tickets.length - breaches) / t.tickets.length) * 1000) / 10
+  // Merge duplicate technician records by name (SDP can create new records on renames)
+  const merged = new Map<string, { technicianId: string; tickets: typeof technicians[0]["tickets"] }>();
+  for (const t of technicians) {
+    const existing = merged.get(t.name);
+    if (existing) {
+      existing.tickets.push(...t.tickets);
+    } else {
+      merged.set(t.name, { technicianId: t.id, tickets: [...t.tickets] });
+    }
+  }
+
+  return Array.from(merged.entries())
+    .filter(([, { tickets }]) => tickets.length > 0)
+    .map(([name, { technicianId, tickets }]) => {
+      const resolved = tickets.filter((tk) => isResolved(tk.status)).length;
+      const open     = tickets.filter((tk) => isOpen(tk.status)).length;
+      const breaches = tickets.filter((tk) => tk.slaBreach).length;
+      const slaPercent = tickets.length > 0
+        ? Math.round(((tickets.length - breaches) / tickets.length) * 1000) / 10
         : 100;
-      const resTickets = t.tickets.filter((tk) => tk.resolutionTimeMinutes != null);
+      const resTickets = tickets.filter((tk) => tk.resolutionTimeMinutes != null);
       const avgRes = resTickets.length > 0
         ? resTickets.reduce((s, tk) => s + (tk.resolutionTimeMinutes ?? 0), 0) / resTickets.length / 60
         : 0;
 
       return {
-        technicianId:       t.id,
-        technicianName:     t.name,
+        technicianId,
+        technicianName:     name,
         resolved,
         open,
-        avgRating:          4.2 + Math.random() * 0.7, // placeholder – integrate ratings later
+        avgRating:          4.2 + Math.random() * 0.7,
         slaPercent,
         avgResolutionHours: Math.round(avgRes * 10) / 10,
       };

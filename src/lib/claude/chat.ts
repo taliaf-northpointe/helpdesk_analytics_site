@@ -189,6 +189,61 @@ Known support groups (use these exact names when filtering by group):
 - NetOps - Group
 - Servicing-Investor Accounting & Reporting - Group
 
+Known technicians (use these exact names when filtering by technician):
+- Adam Boot
+- Adrian Thomas
+- AJ Bays
+- Brad Hass
+- Brad Sherwood
+- Cathleen Porter
+- Crissa Klein
+- Derek DeLange
+- Divya Balasundaram
+- Doug McClintick
+- Gavin Keen
+- Grant Abejar
+- Jarrell Brown
+- Jayson Miller
+- Joe Harder
+- John Zelasko
+- Josh Sharpe
+- Karthik Modukuri
+- Kyle Vela
+- Lucas Reist
+- Mark Loew
+- Matthew Garcia
+- Michael Sanford
+- Michael Snow
+- Mike Nulph
+- Nora (ServiceDesk Assistant)
+- Patti Curry
+- Rhema LaMontagne
+- Rod Cushman
+- Ryan Foy
+- Sarah Federico
+- Sean Kluiter
+- Seth Compston
+- Steve Pagano
+- Talia Frazier
+- Todd Cates
+- William McCaster
+
+Known ticket statuses (use these exact names when filtering by status):
+Open statuses (ticket is not yet resolved):
+- Open
+- Awaiting CAB
+- Awaiting Peer Review
+- Awaiting prod sign-off
+- Awaiting Vendor Action
+- On Hold / Waiting for Vendor
+- Pending Requester Response
+- Received - Assessing
+
+Closed/completed statuses:
+- Completed
+- Closed
+- Cancelled
+
 Guidelines:
 - Always use the query_tickets tool to answer data questions — never guess or make up numbers.
 - After getting tool results, summarize them clearly for the user in plain English.
@@ -196,7 +251,8 @@ Guidelines:
 - For trend questions, describe the pattern in the daily counts data.
 - Be concise and professional. Get to the numbers quickly.
 - If the user asks about a specific ticket, use action: lookup_ticket with the ticket ID.
-- Default period is "this_week" unless the user specifies otherwise.`;
+- Default period is "this_week" unless the user specifies otherwise.
+- When filtering by status, use the exact SDP status names listed above (e.g. "Open", not "OPEN").`;
 
 // ─── Chat function ────────────────────────────────────────────────────────────
 

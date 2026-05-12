@@ -5,12 +5,31 @@ import type { SDPTicket, TicketStatus, TicketPriority } from "@/types";
 // ─── Field mappers ────────────────────────────────────────────────────────────
 
 function mapStatus(sdpStatus: string): TicketStatus {
-  const s = sdpStatus.toLowerCase();
-  if (s.includes("progress"))  return "IN_PROGRESS";
-  if (s.includes("hold"))      return "ON_HOLD";
-  if (s.includes("resolved"))  return "RESOLVED";
-  if (s.includes("closed"))    return "CLOSED";
-  return "OPEN";
+  switch (sdpStatus.trim()) {
+    case "Open":                          return "OPEN";
+    case "Awaiting CAB":
+    case "Awaiting Peer Review":
+    case "Awaiting prod sign-off":
+    case "Received - Assessing":          return "IN_PROGRESS";
+    case "Awaiting Vendor Action":
+    case "On Hold / Waiting for Vendor":
+    case "Pending Requester Response":    return "ON_HOLD";
+    case "Completed":                     return "RESOLVED";
+    case "Closed":
+    case "Cancelled":                     return "CLOSED";
+    default: {
+      const s = sdpStatus.toLowerCase();
+      if (s.includes("progress") || s.includes("assessing") || s.includes("review") || s.includes("sign-off"))
+        return "IN_PROGRESS";
+      if (s.includes("hold") || s.includes("waiting") || s.includes("vendor") || s.includes("pending"))
+        return "ON_HOLD";
+      if (s.includes("resolved") || s.includes("completed"))
+        return "RESOLVED";
+      if (s.includes("closed") || s.includes("cancelled"))
+        return "CLOSED";
+      return "OPEN";
+    }
+  }
 }
 
 function mapPriority(sdpPriority: string): TicketPriority {
