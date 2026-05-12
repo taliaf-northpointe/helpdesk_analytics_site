@@ -123,8 +123,8 @@ export async function getTrends(period: TimePeriod, filters?: ReportFilters): Pr
     const key = bucket(t.createdAt);
     const entry = map.get(key) ?? { open: 0, closed: 0, total: 0 };
     entry.total++;
-    if (t.status === "OPEN" || t.status === "IN_PROGRESS") entry.open++;
-    if (t.status === "CLOSED" || t.status === "RESOLVED")  entry.closed++;
+    if (isOpen(t.status))     entry.open++;
+    if (isResolved(t.status)) entry.closed++;
     map.set(key, entry);
   }
 
@@ -340,6 +340,16 @@ export async function getRecentTickets(limit = 10): Promise<RecentTicket[]> {
   }));
 }
 
+// ─── Live snapshot (no date filter — current state of all tickets) ───────────
+
+export async function getSnapshot(): Promise<StatusBreakdown> {
+  const rows = await prisma.ticket.groupBy({
+    by:     ["status"],
+    _count: { status: true },
+  });
+  return Object.fromEntries(rows.map((r) => [r.status, r._count.status]));
+}
+
 // ─── Full dashboard ───────────────────────────────────────────────────────────
 
 export async function getDashboardData(
@@ -349,11 +359,12 @@ export async function getDashboardData(
 ): Promise<DashboardData> {
   const { from, to } = getDateRange(period);
 
-  const [kpis, trends, statusBreakdown, priorityBreakdown, groupPerformance, categoryBreakdown, technicianPerformance, recentTickets] =
+  const [kpis, trends, statusBreakdown, snapshot, priorityBreakdown, groupPerformance, categoryBreakdown, technicianPerformance, recentTickets] =
     await Promise.all([
       getKPIs(period, filters),
       getTrends(period, filters),
       getStatusBreakdown(period, filters),
+      getSnapshot(),
       getPriorityBreakdown(period, filters),
       getGroupPerformance(period, filters),
       getCategoryBreakdown(period, filters),
@@ -365,6 +376,7 @@ export async function getDashboardData(
     kpis,
     trends,
     statusBreakdown,
+    snapshot,
     priorityBreakdown,
     groupPerformance,
     categoryBreakdown,

@@ -10,7 +10,9 @@ export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
   const page     = Math.max(1, parseInt(params.get("page")  ?? "1",  10));
   const pageSize = Math.min(100, parseInt(params.get("size") ?? "25", 10));
-  const status   = params.get("status") ?? undefined;
+  const statusRaw   = params.get("statuses") ?? params.get("status") ?? undefined;
+  const status      = statusRaw?.includes(",") ? undefined : statusRaw;
+  const statusIn    = statusRaw?.includes(",") ? statusRaw.split(",") : undefined;
   const priority = params.get("priority") ?? undefined;
   const groupId  = params.get("groupId") ?? undefined;
   const search   = params.get("q") ?? undefined;
@@ -18,7 +20,7 @@ export async function GET(req: NextRequest) {
   const to       = params.get("to")   ? new Date(params.get("to")!)   : undefined;
 
   const where = {
-    ...(status   ? { status:   status   as never } : {}),
+    ...(statusIn  ? { status:   { in: statusIn as never[] } } : status ? { status: status as never } : {}),
     ...(priority ? { priority: priority as never } : {}),
     ...(groupId  ? { groupId } : {}),
     ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}),

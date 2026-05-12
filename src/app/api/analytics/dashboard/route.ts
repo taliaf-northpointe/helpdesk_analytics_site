@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const period = (req.nextUrl.searchParams.get("period") ?? "monthly") as TimePeriod;
-  const validPeriods: TimePeriod[] = ["daily", "weekly", "monthly", "quarterly", "yearly", "today", "last_month"];
+  const validPeriods: TimePeriod[] = ["daily", "weekly", "monthly", "quarterly", "last_quarter", "yearly", "last_year", "today", "last_month"];
   if (!validPeriods.includes(period)) {
     return NextResponse.json({ error: "Invalid period" }, { status: 400 });
   }

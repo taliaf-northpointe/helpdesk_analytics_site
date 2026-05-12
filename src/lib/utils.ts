@@ -25,6 +25,16 @@ export function getDateRange(period: TimePeriod): { from: Date; to: Date } {
       const e = endOfDay(subDays(startOfMonth(now), 1));
       return { from: s, to: e };
     }
+    case "last_quarter": {
+      const s = startOfQuarter(subQuarters(now, 1));
+      const e = endOfDay(subDays(startOfQuarter(now), 1));
+      return { from: s, to: e };
+    }
+    case "last_year": {
+      const s = startOfYear(subYears(now, 1));
+      const e = endOfDay(subDays(startOfYear(now), 1));
+      return { from: s, to: e };
+    }
   }
 }
 
@@ -40,6 +50,16 @@ export function getPreviousDateRange(period: TimePeriod): { from: Date; to: Date
     case "last_month": {
       const s = startOfMonth(subMonths(now, 2));
       const e = endOfDay(subDays(startOfMonth(subMonths(now, 1)), 1));
+      return { from: s, to: e };
+    }
+    case "last_quarter": {
+      const s = startOfQuarter(subQuarters(now, 2));
+      const e = endOfDay(subDays(startOfQuarter(subQuarters(now, 1)), 1));
+      return { from: s, to: e };
+    }
+    case "last_year": {
+      const s = startOfYear(subYears(now, 2));
+      const e = endOfDay(subDays(startOfYear(subYears(now, 1)), 1));
       return { from: s, to: e };
     }
   }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, FileText, Ticket, BarChart3,
+  LayoutDashboard, FileText, Ticket, Radio,
   ShieldCheck, Settings, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { href: "/",            icon: LayoutDashboard, label: "Dashboard"   },
   { href: "/reports",     icon: FileText,         label: "Reports"     },
   { href: "/tickets",     icon: Ticket,           label: "Tickets"     },
-  { href: "/analytics",  icon: BarChart3,         label: "Analytics"   },
+  { href: "/analytics",  icon: Radio,              label: "Live Queue"  },
   { href: "/sla-monitor", icon: ShieldCheck,      label: "SLA Monitor" },
   { href: "/settings",   icon: Settings,          label: "Settings"    },
 ];

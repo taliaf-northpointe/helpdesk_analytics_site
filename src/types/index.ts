@@ -81,7 +81,8 @@ export interface PriorityBreakdown {
 export interface DashboardData {
   kpis:         KPIData;
   trends:       TrendPoint[];
-  statusBreakdown: StatusBreakdown;
+  statusBreakdown: StatusBreakdown;    // tickets created in period, grouped by status
+  snapshot:     StatusBreakdown;       // ALL tickets currently in each status (no date filter)
   priorityBreakdown: PriorityBreakdown;
   groupPerformance: GroupPerformance[];
   categoryBreakdown: CategoryBreakdown[];
@@ -91,7 +92,7 @@ export interface DashboardData {
   dateRange:    { from: string; to: string };
 }
 
-export type TimePeriod = "daily" | "weekly" | "monthly" | "quarterly" | "yearly" | "today" | "last_month";
+export type TimePeriod = "daily" | "weekly" | "monthly" | "quarterly" | "last_quarter" | "yearly" | "last_year" | "today" | "last_month";
 
 export interface ReportFilters {
   groupName?:      string;

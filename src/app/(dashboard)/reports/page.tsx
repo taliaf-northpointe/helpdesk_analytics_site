@@ -16,13 +16,15 @@ import type { DashboardData, TimePeriod } from "@/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PERIODS: { key: TimePeriod; label: string }[] = [
-  { key: "today",      label: "Today"        },
-  { key: "weekly",     label: "This Week"    },
-  { key: "monthly",    label: "This Month"   },
-  { key: "last_month", label: "Last Month"   },
-  { key: "quarterly",  label: "This Quarter" },
-  { key: "yearly",     label: "This Year"    },
+const PERIODS: { key: TimePeriod; label: string; sub: string }[] = [
+  { key: "today",        label: "Today",        sub: "created today"        },
+  { key: "weekly",       label: "This Week",    sub: "created this week"    },
+  { key: "monthly",      label: "This Month",   sub: "created this month"   },
+  { key: "last_month",   label: "Last Month",   sub: "created last month"   },
+  { key: "quarterly",    label: "This Quarter", sub: "created this quarter" },
+  { key: "last_quarter", label: "Last Quarter", sub: "created last quarter" },
+  { key: "yearly",       label: "This Year",    sub: "created this year"    },
+  { key: "last_year",    label: "Last Year",    sub: "created last year"    },
 ];
 
 const PRIORITIES = [
@@ -156,7 +158,8 @@ export default function ReportsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const kpis = data?.kpis;
+  const kpis      = data?.kpis;
+  const periodSub = PERIODS.find((p) => p.key === period)?.sub ?? "";
   const selectCls = "w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/30 transition-colors";
 
   return (
@@ -200,6 +203,25 @@ export default function ReportsPage() {
               <Download size={13} /> Export CSV
             </button>
           </div>
+        </div>
+
+        {/* Live snapshot — all tickets by current status, no date filter */}
+        <div className="bg-card rounded-xl border border-border p-4 shadow-card">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Live Queue — All Tickets by Current Status</p>
+          {loading ? (
+            <div className="h-8 w-64 bg-muted animate-pulse rounded" />
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(data?.snapshot ?? {})
+                .sort((a, b) => b[1] - a[1])
+                .map(([status, count]) => (
+                  <span key={status} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-xs font-medium bg-muted/50 text-foreground">
+                    <span className="font-bold text-brand-primary">{count.toLocaleString()}</span>
+                    {status}
+                  </span>
+                ))}
+            </div>
+          )}
         </div>
 
         {/* Filter panel */}
@@ -292,11 +314,11 @@ export default function ReportsPage() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-          <KPICard index={0} loading={loading} title="Total Tickets"   value={kpis ? formatNumber(kpis.totalTickets)     : "—"} icon={Ticket}        iconBg="bg-blue-100 dark:bg-blue-900/30"     delta={kpis?.deltaTotal}      />
-          <KPICard index={1} loading={loading} title="Open Tickets"    value={kpis ? formatNumber(kpis.openTickets)      : "—"} icon={AlertTriangle}  iconBg="bg-amber-100 dark:bg-amber-900/30"   delta={kpis?.deltaOpen}       />
-          <KPICard index={2} loading={loading} title="Closed Tickets"  value={kpis ? formatNumber(kpis.closedTickets)    : "—"} icon={CheckCircle2}   iconBg="bg-emerald-100 dark:bg-emerald-900/30" delta={kpis?.deltaClosed}   />
-          <KPICard index={3} loading={loading} title="SLA Compliance"  value={kpis ? formatPercent(kpis.slaCompliance)   : "—"} icon={ShieldCheck}    iconBg="bg-teal-100 dark:bg-teal-900/30"     delta={kpis?.deltaSla}        />
-          <KPICard index={4} loading={loading} title="Avg Resolution"  value={kpis ? `${kpis.avgResolutionTime}`         : "—"} icon={Clock}          iconBg="bg-purple-100 dark:bg-purple-900/30" delta={kpis?.deltaResolution} suffix="h" />
+          <KPICard index={0} loading={loading} title="Total Tickets"   subtitle={periodSub} value={kpis ? formatNumber(kpis.totalTickets)     : "—"} icon={Ticket}        iconBg="bg-blue-100 dark:bg-blue-900/30"       delta={kpis?.deltaTotal}      />
+          <KPICard index={1} loading={loading} title="Open Tickets"    subtitle={periodSub} value={kpis ? formatNumber(kpis.openTickets)      : "—"} icon={AlertTriangle}  iconBg="bg-amber-100 dark:bg-amber-900/30"     delta={kpis?.deltaOpen}       />
+          <KPICard index={2} loading={loading} title="Closed Tickets"  subtitle={periodSub} value={kpis ? formatNumber(kpis.closedTickets)    : "—"} icon={CheckCircle2}   iconBg="bg-emerald-100 dark:bg-emerald-900/30" delta={kpis?.deltaClosed}      />
+          <KPICard index={3} loading={loading} title="SLA Compliance"  subtitle={periodSub} value={kpis ? formatPercent(kpis.slaCompliance)   : "—"} icon={ShieldCheck}    iconBg="bg-teal-100 dark:bg-teal-900/30"       delta={kpis?.deltaSla}        />
+          <KPICard index={4} loading={loading} title="Avg Resolution"  subtitle={periodSub} value={kpis ? `${kpis.avgResolutionTime}`         : "—"} icon={Clock}          iconBg="bg-purple-100 dark:bg-purple-900/30"   delta={kpis?.deltaResolution} suffix="h" />
         </div>
 
         {/* Group + Technician tables */}

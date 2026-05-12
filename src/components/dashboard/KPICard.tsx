@@ -5,17 +5,20 @@ import { TrendingUp, TrendingDown, Minus, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface KPICardProps {
-  title:    string;
-  value:    string | number;
-  delta?:   number;       // % change vs previous period
-  icon:     LucideIcon;
-  iconBg?:  string;
-  suffix?:  string;
-  loading?: boolean;
-  index?:   number;       // for stagger animation
+  title:     string;
+  subtitle?: string;      // e.g. "Created today" — clarifies date scope
+  value:     string | number;
+  delta?:    number;      // % change vs previous period
+  icon:      LucideIcon;
+  iconBg?:   string;
+  suffix?:   string;
+  loading?:  boolean;
+  index?:    number;      // for stagger animation
+  onClick?:  () => void;
+  active?:   boolean;     // highlighted when drill-down is open
 }
 
-export function KPICard({ title, value, delta, icon: Icon, iconBg, suffix, loading, index = 0 }: KPICardProps) {
+export function KPICard({ title, subtitle, value, delta, icon: Icon, iconBg, suffix, loading, index = 0, onClick, active }: KPICardProps) {
   const isPositive = (delta ?? 0) > 0;
   const isNegative = (delta ?? 0) < 0;
   const hasDelta   = delta !== undefined && delta !== null;
@@ -25,7 +28,12 @@ export function KPICard({ title, value, delta, icon: Icon, iconBg, suffix, loadi
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.07, duration: 0.35 }}
-      className="bg-card rounded-xl border border-border p-5 shadow-card card-hover"
+      onClick={onClick}
+      className={cn(
+        "bg-card rounded-xl border p-5 shadow-card transition-colors",
+        onClick ? "cursor-pointer hover:border-brand-primary/50" : "card-hover",
+        active ? "border-brand-primary ring-1 ring-brand-primary/30" : "border-border",
+      )}
     >
       {loading ? (
         <div className="space-y-3 animate-pulse">
@@ -39,8 +47,11 @@ export function KPICard({ title, value, delta, icon: Icon, iconBg, suffix, loadi
       ) : (
         <div className="flex flex-col gap-2">
           <div className="flex items-start justify-between">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</p>
-            <div className={cn("flex items-center justify-center w-9 h-9 rounded-lg", iconBg ?? "bg-primary/10")}>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</p>
+              {subtitle && <p className="text-[10px] text-muted-foreground/70 mt-0.5">{subtitle}</p>}
+            </div>
+            <div className={cn("flex items-center justify-center w-9 h-9 rounded-lg shrink-0", iconBg ?? "bg-primary/10")}>
               <Icon size={18} className="text-primary" />
             </div>
           </div>
