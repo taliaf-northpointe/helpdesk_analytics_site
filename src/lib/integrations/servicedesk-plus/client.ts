@@ -131,6 +131,7 @@ export async function sdpPaginate<T>(
       sort_order:      "asc",
       fields_required: LIST_FIELDS,
       get_total_count: true,
+      filter_by:       { name: "All_Requests" },
     };
     if (searchCriteria?.length) listInfo.search_criteria = searchCriteria;
 
