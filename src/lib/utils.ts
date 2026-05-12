@@ -14,22 +14,34 @@ export function getDateRange(period: TimePeriod): { from: Date; to: Date } {
   const to   = endOfDay(now);
 
   switch (period) {
+    case "today":
     case "daily":     return { from: startOfDay(now),             to };
     case "weekly":    return { from: startOfWeek(now),            to };
     case "monthly":   return { from: startOfMonth(now),           to };
     case "quarterly": return { from: startOfQuarter(now),         to };
     case "yearly":    return { from: startOfYear(now),            to };
+    case "last_month": {
+      const s = startOfMonth(subMonths(now, 1));
+      const e = endOfDay(subDays(startOfMonth(now), 1));
+      return { from: s, to: e };
+    }
   }
 }
 
 export function getPreviousDateRange(period: TimePeriod): { from: Date; to: Date } {
   const now = new Date();
   switch (period) {
-    case "daily":     return { from: startOfDay(subDays(now, 1)),       to: endOfDay(subDays(now, 1)) };
-    case "weekly":    return { from: startOfWeek(subWeeks(now, 1)),     to: endOfDay(subDays(startOfWeek(now), 1)) };
-    case "monthly":   return { from: startOfMonth(subMonths(now, 1)),   to: endOfDay(subDays(startOfMonth(now), 1)) };
-    case "quarterly": return { from: startOfQuarter(subQuarters(now,1)),to: endOfDay(subDays(startOfQuarter(now), 1)) };
-    case "yearly":    return { from: startOfYear(subYears(now, 1)),     to: endOfDay(subDays(startOfYear(now), 1)) };
+    case "today":
+    case "daily":     return { from: startOfDay(subDays(now, 1)),         to: endOfDay(subDays(now, 1)) };
+    case "weekly":    return { from: startOfWeek(subWeeks(now, 1)),       to: endOfDay(subDays(startOfWeek(now), 1)) };
+    case "monthly":   return { from: startOfMonth(subMonths(now, 1)),     to: endOfDay(subDays(startOfMonth(now), 1)) };
+    case "quarterly": return { from: startOfQuarter(subQuarters(now, 1)), to: endOfDay(subDays(startOfQuarter(now), 1)) };
+    case "yearly":    return { from: startOfYear(subYears(now, 1)),       to: endOfDay(subDays(startOfYear(now), 1)) };
+    case "last_month": {
+      const s = startOfMonth(subMonths(now, 2));
+      const e = endOfDay(subDays(startOfMonth(subMonths(now, 1)), 1));
+      return { from: s, to: e };
+    }
   }
 }
 

@@ -3,7 +3,8 @@ import { getDateRange, getPreviousDateRange, calcDelta } from "@/lib/utils";
 import type {
   TimePeriod, KPIData, TrendPoint, GroupPerformance,
   CategoryBreakdown, TechnicianPerformance, StatusBreakdown,
-  PriorityBreakdown, DashboardData, RecentTicket,
+  PriorityBreakdown, DashboardData, RecentTicket, ReportFilters,
+  TicketPriority, TicketStatus,
 } from "@/types";
 import { format, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval } from "date-fns";
 
@@ -12,23 +13,48 @@ import { format, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval } fr
 const isOpen     = (s: string) => s === "OPEN" || s === "IN_PROGRESS";
 const isResolved = (s: string) => s === "RESOLVED" || s === "CLOSED";
 
+// ─── Filter helpers ───────────────────────────────────────────────────────────
+
+function buildWhere(range: { from: Date; to: Date }, filters?: ReportFilters) {
+  return {
+    createdAt: { gte: range.from, lte: range.to },
+    ...(filters?.groupName      ? { group:      { name: filters.groupName } }                       : {}),
+    ...(filters?.technicianName ? { technician: { name: filters.technicianName } }                 : {}),
+    ...(filters?.categoryName   ? { category:   { name: filters.categoryName } }                   : {}),
+    ...(filters?.priorities?.length ? { priority: { in: filters.priorities as TicketPriority[] } } : {}),
+    ...(filters?.statuses?.length   ? { status:   { in: filters.statuses   as TicketStatus[] } }   : {}),
+  };
+}
+
+// Variant that omits the groupName filter (used inside group relation includes)
+function buildGroupTicketWhere(range: { from: Date; to: Date }, filters?: ReportFilters) {
+  const { groupName: _, ...rest } = filters ?? {};
+  return buildWhere(range, Object.keys(rest).length ? rest : undefined);
+}
+
+// Variant that omits the technicianName filter (used inside technician relation includes)
+function buildTechTicketWhere(range: { from: Date; to: Date }, filters?: ReportFilters) {
+  const { technicianName: _, ...rest } = filters ?? {};
+  return buildWhere(range, Object.keys(rest).length ? rest : undefined);
+}
+
+// Variant that omits the categoryName filter (used inside category relation includes)
+function buildCatTicketWhere(range: { from: Date; to: Date }, filters?: ReportFilters) {
+  const { categoryName: _, ...rest } = filters ?? {};
+  return buildWhere(range, Object.keys(rest).length ? rest : undefined);
+}
+
 // ─── KPIs ─────────────────────────────────────────────────────────────────────
 
-export async function getKPIs(period: TimePeriod): Promise<KPIData> {
+export async function getKPIs(period: TimePeriod, filters?: ReportFilters): Promise<KPIData> {
   const { from, to } = getDateRange(period);
   const { from: prevFrom, to: prevTo } = getPreviousDateRange(period);
+  const where     = buildWhere({ from, to }, filters);
+  const prevWhere = buildWhere({ from: prevFrom, to: prevTo }, filters);
 
   const [curr, prev] = await Promise.all([
-    prisma.ticket.groupBy({
-      by:    ["status"],
-      where: { createdAt: { gte: from, lte: to } },
-      _count: { status: true },
-    }),
-    prisma.ticket.groupBy({
-      by:    ["status"],
-      where: { createdAt: { gte: prevFrom, lte: prevTo } },
-      _count: { status: true },
-    }),
+    prisma.ticket.groupBy({ by: ["status"], where,     _count: { status: true } }),
+    prisma.ticket.groupBy({ by: ["status"], where: prevWhere, _count: { status: true } }),
   ]);
 
   const toMap = (rows: { status: string; _count: { status: number } }[]) =>
@@ -39,22 +65,16 @@ export async function getKPIs(period: TimePeriod): Promise<KPIData> {
 
   const totalCurr = Object.values(c).reduce((a, b) => a + b, 0);
   const totalPrev = Object.values(p).reduce((a, b) => a + b, 0);
-  const openCurr  = c.OPEN ?? 0;
-  const openPrev  = p.OPEN ?? 0;
+  const openCurr   = c.OPEN ?? 0;
+  const openPrev   = p.OPEN ?? 0;
   const closedCurr = (c.CLOSED ?? 0) + (c.RESOLVED ?? 0);
   const closedPrev = (p.CLOSED ?? 0) + (p.RESOLVED ?? 0);
 
   const [breachCount, prevBreachCount, avgResRaw, prevAvgResRaw] = await Promise.all([
-    prisma.ticket.count({ where: { slaBreach: true, createdAt: { gte: from, lte: to } } }),
-    prisma.ticket.count({ where: { slaBreach: true, createdAt: { gte: prevFrom, lte: prevTo } } }),
-    prisma.ticket.aggregate({
-      _avg: { resolutionTimeMinutes: true },
-      where: { resolutionTimeMinutes: { not: null }, createdAt: { gte: from, lte: to } },
-    }),
-    prisma.ticket.aggregate({
-      _avg: { resolutionTimeMinutes: true },
-      where: { resolutionTimeMinutes: { not: null }, createdAt: { gte: prevFrom, lte: prevTo } },
-    }),
+    prisma.ticket.count({ where: { ...where,     slaBreach: true } }),
+    prisma.ticket.count({ where: { ...prevWhere, slaBreach: true } }),
+    prisma.ticket.aggregate({ _avg: { resolutionTimeMinutes: true }, where: { ...where,     resolutionTimeMinutes: { not: null } } }),
+    prisma.ticket.aggregate({ _avg: { resolutionTimeMinutes: true }, where: { ...prevWhere, resolutionTimeMinutes: { not: null } } }),
   ]);
 
   const slaCurr = totalCurr > 0 ? Math.round(((totalCurr - breachCount) / totalCurr) * 1000) / 10 : 100;
@@ -81,11 +101,11 @@ export async function getKPIs(period: TimePeriod): Promise<KPIData> {
 
 // ─── Trends ───────────────────────────────────────────────────────────────────
 
-export async function getTrends(period: TimePeriod): Promise<TrendPoint[]> {
+export async function getTrends(period: TimePeriod, filters?: ReportFilters): Promise<TrendPoint[]> {
   const { from, to } = getDateRange(period);
 
   const tickets = await prisma.ticket.findMany({
-    where: { createdAt: { gte: from, lte: to } },
+    where: buildWhere({ from, to }, filters),
     select: { createdAt: true, status: true },
   });
 
@@ -116,11 +136,11 @@ export async function getTrends(period: TimePeriod): Promise<TrendPoint[]> {
 
 // ─── Status breakdown ─────────────────────────────────────────────────────────
 
-export async function getStatusBreakdown(period: TimePeriod): Promise<StatusBreakdown> {
+export async function getStatusBreakdown(period: TimePeriod, filters?: ReportFilters): Promise<StatusBreakdown> {
   const { from, to } = getDateRange(period);
   const rows = await prisma.ticket.groupBy({
     by:    ["status"],
-    where: { createdAt: { gte: from, lte: to } },
+    where: buildWhere({ from, to }, filters),
     _count: { status: true },
   });
   const m = Object.fromEntries(rows.map((r) => [r.status, r._count.status]));
@@ -135,11 +155,11 @@ export async function getStatusBreakdown(period: TimePeriod): Promise<StatusBrea
 
 // ─── Priority breakdown ───────────────────────────────────────────────────────
 
-export async function getPriorityBreakdown(period: TimePeriod): Promise<PriorityBreakdown> {
+export async function getPriorityBreakdown(period: TimePeriod, filters?: ReportFilters): Promise<PriorityBreakdown> {
   const { from, to } = getDateRange(period);
   const rows = await prisma.ticket.groupBy({
     by:    ["priority"],
-    where: { createdAt: { gte: from, lte: to } },
+    where: buildWhere({ from, to }, filters),
     _count: { priority: true },
   });
   const m = Object.fromEntries(rows.map((r) => [r.priority, r._count.priority]));
@@ -148,13 +168,14 @@ export async function getPriorityBreakdown(period: TimePeriod): Promise<Priority
 
 // ─── Group performance ────────────────────────────────────────────────────────
 
-export async function getGroupPerformance(period: TimePeriod): Promise<GroupPerformance[]> {
+export async function getGroupPerformance(period: TimePeriod, filters?: ReportFilters): Promise<GroupPerformance[]> {
   const { from, to } = getDateRange(period);
 
   const groups = await prisma.group.findMany({
+    where: filters?.groupName ? { name: filters.groupName } : undefined,
     include: {
       tickets: {
-        where: { createdAt: { gte: from, lte: to } },
+        where: buildGroupTicketWhere({ from, to }, filters),
         select: { status: true, slaBreach: true, resolutionTimeMinutes: true },
       },
     },
@@ -200,25 +221,28 @@ export async function getGroupPerformance(period: TimePeriod): Promise<GroupPerf
 
 // ─── Category breakdown ───────────────────────────────────────────────────────
 
-export async function getCategoryBreakdown(period: TimePeriod): Promise<CategoryBreakdown[]> {
+export async function getCategoryBreakdown(period: TimePeriod, filters?: ReportFilters): Promise<CategoryBreakdown[]> {
   const { from, to } = getDateRange(period);
   const { from: prevFrom, to: prevTo } = getPreviousDateRange(period);
+  const ticketWhere = buildCatTicketWhere({ from, to }, filters);
+  const prevWhere   = buildCatTicketWhere({ from: prevFrom, to: prevTo }, filters);
 
   const categories = await prisma.category.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      ...(filters?.categoryName ? { name: filters.categoryName } : {}),
+    },
     include: {
-      tickets:      { where: { createdAt: { gte: from, lte: to } }, select: { id: true } },
+      tickets:      { where: ticketWhere, select: { id: true } },
       subcategories: {
-        include: {
-          tickets: { where: { createdAt: { gte: from, lte: to } }, select: { id: true } },
-        },
+        include: { tickets: { where: ticketWhere, select: { id: true } } },
       },
     },
   });
 
   const prevCounts = await prisma.ticket.groupBy({
     by:    ["categoryId"],
-    where: { createdAt: { gte: prevFrom, lte: prevTo }, categoryId: { not: null } },
+    where: { ...prevWhere, categoryId: { not: null } },
     _count: { id: true },
   });
   const prevMap = new Map(prevCounts.map((r) => [r.categoryId, r._count.id]));
@@ -244,13 +268,14 @@ export async function getCategoryBreakdown(period: TimePeriod): Promise<Category
 
 // ─── Technician performance ───────────────────────────────────────────────────
 
-export async function getTechnicianPerformance(period: TimePeriod): Promise<TechnicianPerformance[]> {
+export async function getTechnicianPerformance(period: TimePeriod, filters?: ReportFilters, limit: number | null = 10): Promise<TechnicianPerformance[]> {
   const { from, to } = getDateRange(period);
 
   const technicians = await prisma.technician.findMany({
+    where: filters?.technicianName ? { name: filters.technicianName } : undefined,
     include: {
       tickets: {
-        where: { createdAt: { gte: from, lte: to } },
+        where: buildTechTicketWhere({ from, to }, filters),
         select: { status: true, slaBreach: true, resolutionTimeMinutes: true },
       },
     },
@@ -267,7 +292,7 @@ export async function getTechnicianPerformance(period: TimePeriod): Promise<Tech
     }
   }
 
-  return Array.from(merged.entries())
+  const result = Array.from(merged.entries())
     .filter(([, { tickets }]) => tickets.length > 0)
     .map(([name, { technicianId, tickets }]) => {
       const resolved = tickets.filter((tk) => isResolved(tk.status)).length;
@@ -291,8 +316,9 @@ export async function getTechnicianPerformance(period: TimePeriod): Promise<Tech
         avgResolutionHours: Math.round(avgRes * 10) / 10,
       };
     })
-    .sort((a, b) => b.resolved - a.resolved)
-    .slice(0, 10);
+    .sort((a, b) => b.resolved - a.resolved);
+
+  return limit !== null ? result.slice(0, limit) : result;
 }
 
 // ─── Recent tickets ───────────────────────────────────────────────────────────
@@ -308,9 +334,9 @@ export async function getRecentTickets(limit = 10): Promise<RecentTicket[]> {
     id:         t.id,
     externalId: t.externalId,
     subject:    t.subject,
-    status:     t.status,
-    priority:   t.priority,
-    group:      t.group?.name    ?? "Unassigned",
+    status:     t.status   as TicketStatus,
+    priority:   t.priority as TicketPriority,
+    group:      t.group?.name      ?? "Unassigned",
     technician: t.technician?.name ?? "Unassigned",
     createdAt:  t.createdAt.toISOString(),
     updatedAt:  t.updatedAt.toISOString(),
@@ -320,18 +346,22 @@ export async function getRecentTickets(limit = 10): Promise<RecentTicket[]> {
 
 // ─── Full dashboard ───────────────────────────────────────────────────────────
 
-export async function getDashboardData(period: TimePeriod): Promise<DashboardData> {
+export async function getDashboardData(
+  period: TimePeriod,
+  filters?: ReportFilters,
+  technicianLimit: number | null = 10,
+): Promise<DashboardData> {
   const { from, to } = getDateRange(period);
 
   const [kpis, trends, statusBreakdown, priorityBreakdown, groupPerformance, categoryBreakdown, technicianPerformance, recentTickets] =
     await Promise.all([
-      getKPIs(period),
-      getTrends(period),
-      getStatusBreakdown(period),
-      getPriorityBreakdown(period),
-      getGroupPerformance(period),
-      getCategoryBreakdown(period),
-      getTechnicianPerformance(period),
+      getKPIs(period, filters),
+      getTrends(period, filters),
+      getStatusBreakdown(period, filters),
+      getPriorityBreakdown(period, filters),
+      getGroupPerformance(period, filters),
+      getCategoryBreakdown(period, filters),
+      getTechnicianPerformance(period, filters, technicianLimit),
       getRecentTickets(8),
     ]);
 

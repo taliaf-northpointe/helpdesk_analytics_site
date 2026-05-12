@@ -88,7 +88,15 @@ export interface DashboardData {
   dateRange:    { from: string; to: string };
 }
 
-export type TimePeriod = "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
+export type TimePeriod = "daily" | "weekly" | "monthly" | "quarterly" | "yearly" | "today" | "last_month";
+
+export interface ReportFilters {
+  groupName?:      string;
+  technicianName?: string;
+  categoryName?:   string;
+  priorities?:     string[];
+  statuses?:       string[];
+}
 
 export interface RecentTicket {
   id:          string;
