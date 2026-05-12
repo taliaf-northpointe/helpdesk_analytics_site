@@ -215,7 +215,7 @@ Known technicians (use these exact names when filtering by technician):
 - Michael Sanford
 - Michael Snow
 - Mike Nulph
-- Nora (ServiceDesk Assistant)
+- Nora, ServiceDesk Assistant
 - Patti Curry
 - Rhema LaMontagne
 - Rod Cushman
