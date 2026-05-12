@@ -1,0 +1,187 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+import {
+  Ticket, CheckCircle2, AlertTriangle, Clock, ShieldCheck,
+} from "lucide-react";
+import { Header }             from "@/components/layout/Header";
+import { KPICard }            from "@/components/dashboard/KPICard";
+import { TicketVolumeChart }  from "@/components/dashboard/TicketVolumeChart";
+import { TicketsByStatus }    from "@/components/dashboard/TicketsByStatus";
+import { PerformanceTable }   from "@/components/dashboard/PerformanceTable";
+import { TicketsByCategory }  from "@/components/dashboard/TicketsByCategory";
+import { RecentActivity }     from "@/components/dashboard/RecentActivity";
+import { TopAgents }          from "@/components/dashboard/TopAgents";
+import { DashboardFooter }    from "@/components/dashboard/DashboardFooter";
+import { ChatWidget }         from "@/components/chatbot/ChatWidget";
+import { getGreeting, formatNumber, formatPercent } from "@/lib/utils";
+import type { DashboardData, TimePeriod } from "@/types";
+
+const PERIODS: { key: TimePeriod; label: string }[] = [
+  { key: "daily",     label: "Daily"     },
+  { key: "weekly",    label: "Weekly"    },
+  { key: "monthly",   label: "Monthly"   },
+  { key: "quarterly", label: "Quarterly" },
+  { key: "yearly",    label: "Yearly"    },
+];
+
+export default function DashboardPage() {
+  const [period,     setPeriod]     = useState<TimePeriod>("monthly");
+  const [data,       setData]       = useState<DashboardData | null>(null);
+  const [loading,    setLoading]    = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [updatedAt,  setUpdatedAt]  = useState(new Date());
+
+  const fetchData = useCallback(async (p: TimePeriod, isRefresh = false) => {
+    if (isRefresh) setRefreshing(true); else setLoading(true);
+    try {
+      const res  = await fetch(`/api/analytics/dashboard?period=${p}`);
+      const json = await res.json() as DashboardData;
+      setData(json);
+      setUpdatedAt(new Date());
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(period); }, [period, fetchData]);
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const id = setInterval(() => fetchData(period, true), 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [period, fetchData]);
+
+  const kpis = data?.kpis;
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header
+        greeting={getGreeting() + ", Talia"}
+        subtitle="Here are your latest ticket analytics and support trends."
+        onRefresh={() => fetchData(period, true)}
+        refreshing={refreshing}
+        rightSlot={
+          <div className="flex items-center gap-1.5">
+            {(["All Tickets", "My Tickets", "Urgent"] as const).map((label) => (
+              <button
+                key={label}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors first:bg-brand-primary first:text-white first:border-brand-primary"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        }
+      />
+
+      <div className="flex-1 px-6 py-5 space-y-6">
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+          <KPICard
+            index={0} loading={loading}
+            title="Total Tickets"   value={kpis ? formatNumber(kpis.totalTickets)     : "—"}
+            icon={Ticket}           iconBg="bg-blue-100 dark:bg-blue-900/30"
+            delta={kpis?.deltaTotal}
+          />
+          <KPICard
+            index={1} loading={loading}
+            title="Open Tickets"    value={kpis ? formatNumber(kpis.openTickets)      : "—"}
+            icon={AlertTriangle}    iconBg="bg-amber-100 dark:bg-amber-900/30"
+            delta={kpis?.deltaOpen}
+          />
+          <KPICard
+            index={2} loading={loading}
+            title="Closed Tickets"  value={kpis ? formatNumber(kpis.closedTickets)    : "—"}
+            icon={CheckCircle2}     iconBg="bg-emerald-100 dark:bg-emerald-900/30"
+            delta={kpis?.deltaClosed}
+          />
+          <KPICard
+            index={3} loading={loading}
+            title="SLA Compliance"  value={kpis ? formatPercent(kpis.slaCompliance)   : "—"}
+            icon={ShieldCheck}      iconBg="bg-teal-100 dark:bg-teal-900/30"
+            delta={kpis?.deltaSla}
+          />
+          <KPICard
+            index={4} loading={loading}
+            title="Avg Resolution"  value={kpis ? `${kpis.avgResolutionTime}`         : "—"}
+            icon={Clock}            iconBg="bg-purple-100 dark:bg-purple-900/30"
+            suffix="h"
+            delta={kpis?.deltaResolution}
+          />
+        </div>
+
+        {/* Period tabs */}
+        <div className="flex items-center gap-1 border-b border-border">
+          {PERIODS.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setPeriod(key)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                period === key
+                  ? "border-brand-primary text-brand-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Charts row */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+          <div className="lg:col-span-3 bg-card rounded-xl border border-border p-5 shadow-card">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Ticket Volume Trends</h3>
+            <TicketVolumeChart data={data?.trends ?? []} loading={loading} />
+          </div>
+          <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5 shadow-card">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Tickets by Status</h3>
+            <TicketsByStatus data={data?.statusBreakdown ?? { open: 0, inProgress: 0, onHold: 0, resolved: 0, closed: 0 }} loading={loading} />
+          </div>
+        </div>
+
+        {/* Tables row */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="bg-card rounded-xl border border-border p-5 shadow-card">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Performance by Group</h3>
+            <PerformanceTable data={data?.groupPerformance ?? []} loading={loading} />
+          </div>
+          <div className="bg-card rounded-xl border border-border p-5 shadow-card">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Tickets by Category</h3>
+            <TicketsByCategory data={data?.categoryBreakdown ?? []} loading={loading} />
+          </div>
+        </div>
+
+        {/* Activity + Agents row */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="bg-card rounded-xl border border-border p-5 shadow-card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-foreground">Recent Activity</h3>
+              <a href="/tickets" className="text-xs text-brand-secondary hover:underline">View all</a>
+            </div>
+            <RecentActivity data={data?.recentTickets ?? []} loading={loading} />
+          </div>
+          <div className="bg-card rounded-xl border border-border p-5 shadow-card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-foreground">Top Agents This Month</h3>
+              <a href="/analytics" className="text-xs text-brand-secondary hover:underline">View all</a>
+            </div>
+            <TopAgents data={data?.technicianPerformance ?? []} loading={loading} />
+          </div>
+        </div>
+      </div>
+
+      <DashboardFooter
+        updatedAt={updatedAt}
+        dateRange={data?.dateRange ?? { from: new Date().toISOString(), to: new Date().toISOString() }}
+        autoRefresh
+      />
+
+      {/* Floating AI chatbot */}
+      <ChatWidget />
+    </div>
+  );
+}

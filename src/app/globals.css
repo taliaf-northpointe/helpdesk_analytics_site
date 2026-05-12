@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background:   0 0% 98%;
+    --foreground:   215 28% 17%;
+    --card:         0 0% 100%;
+    --card-foreground: 215 28% 17%;
+    --popover:      0 0% 100%;
+    --popover-foreground: 215 28% 17%;
+    --primary:      213 43% 30%;   /* #2C4A6E */
+    --primary-foreground: 0 0% 98%;
+    --secondary:    197 44% 50%;   /* #4A9BB8 */
+    --secondary-foreground: 0 0% 98%;
+    --muted:        210 20% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent:       35 44% 61%;    /* #C9A96E */
+    --accent-foreground: 215 28% 17%;
+    --destructive:  0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border:       214 32% 91%;
+    --input:        214 32% 91%;
+    --ring:         213 43% 30%;
+    --radius:       0.625rem;
+  }
+
+  .dark {
+    --background:   215 28% 9%;
+    --foreground:   210 40% 96%;
+    --card:         215 28% 12%;
+    --card-foreground: 210 40% 96%;
+    --popover:      215 28% 12%;
+    --popover-foreground: 210 40% 96%;
+    --primary:      213 43% 55%;
+    --primary-foreground: 0 0% 98%;
+    --secondary:    197 44% 45%;
+    --secondary-foreground: 0 0% 98%;
+    --muted:        215 28% 16%;
+    --muted-foreground: 215 20% 65%;
+    --accent:       35 44% 55%;
+    --accent-foreground: 215 28% 9%;
+    --destructive:  0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border:       215 28% 20%;
+    --input:        215 28% 20%;
+    --ring:         213 43% 55%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-muted-foreground/30 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/50; }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/80 dark:bg-white/5 backdrop-blur-sm border border-white/20;
+  }
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-card-lg hover:-translate-y-0.5;
+  }
+}

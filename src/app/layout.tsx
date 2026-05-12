@@ -1,0 +1,25 @@
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { Toaster } from "sonner";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+
+export const metadata: Metadata = {
+  title: "Help Desk Analytics | Northpointe Bank",
+  description: "IT Help Desk Ticket Analytics and Reporting Dashboard",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`}>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          {children}
+          <Toaster position="top-right" richColors />
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
