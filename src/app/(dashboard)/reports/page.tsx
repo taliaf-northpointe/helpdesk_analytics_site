@@ -17,11 +17,12 @@ import type { DashboardData, TimePeriod } from "@/types";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PERIODS: { key: TimePeriod; label: string }[] = [
-  { key: "today",      label: "Today"      },
-  { key: "monthly",    label: "This Month" },
-  { key: "last_month", label: "Last Month" },
-  { key: "quarterly",  label: "Quarterly"  },
-  { key: "yearly",     label: "Yearly"     },
+  { key: "today",      label: "Today"        },
+  { key: "weekly",     label: "This Week"    },
+  { key: "monthly",    label: "This Month"   },
+  { key: "last_month", label: "Last Month"   },
+  { key: "quarterly",  label: "This Quarter" },
+  { key: "yearly",     label: "This Year"    },
 ];
 
 const PRIORITIES = [

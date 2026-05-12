@@ -19,11 +19,12 @@ import { getGreeting, formatNumber, formatPercent } from "@/lib/utils";
 import type { DashboardData, TimePeriod } from "@/types";
 
 const PERIODS: { key: TimePeriod; label: string }[] = [
-  { key: "daily",     label: "Daily"     },
-  { key: "weekly",    label: "Weekly"    },
-  { key: "monthly",   label: "Monthly"   },
-  { key: "quarterly", label: "Quarterly" },
-  { key: "yearly",    label: "Yearly"    },
+  { key: "today",      label: "Today"          },
+  { key: "weekly",     label: "This Week"      },
+  { key: "monthly",    label: "This Month"     },
+  { key: "last_month", label: "Last Month"     },
+  { key: "quarterly",  label: "This Quarter"   },
+  { key: "yearly",     label: "This Year"      },
 ];
 
 export default function DashboardPage() {
