@@ -147,7 +147,6 @@ export async function getGroupPerformance(period: TimePeriod): Promise<GroupPerf
   const { from, to } = getDateRange(period);
 
   const groups = await prisma.group.findMany({
-    where: { isActive: true },
     include: {
       tickets: {
         where: { createdAt: { gte: from, lte: to } },
@@ -156,21 +155,32 @@ export async function getGroupPerformance(period: TimePeriod): Promise<GroupPerf
     },
   });
 
-  return groups
-    .map((g) => {
-      const total   = g.tickets.length;
-      const open    = g.tickets.filter((t) => t.status === "OPEN" || t.status === "IN_PROGRESS").length;
-      const closed  = g.tickets.filter((t) => t.status === "CLOSED" || t.status === "RESOLVED").length;
-      const breaches = g.tickets.filter((t) => t.slaBreach).length;
+  // Merge duplicate group names (SDP creates new records when groups are renamed/reorganised)
+  const merged = new Map<string, { groupId: string; tickets: typeof groups[0]["tickets"] }>();
+  for (const g of groups) {
+    const existing = merged.get(g.name);
+    if (existing) {
+      existing.tickets.push(...g.tickets);
+    } else {
+      merged.set(g.name, { groupId: g.id, tickets: [...g.tickets] });
+    }
+  }
+
+  return Array.from(merged.entries())
+    .map(([name, { groupId, tickets }]) => {
+      const total    = tickets.length;
+      const open     = tickets.filter((t) => t.status === "OPEN" || t.status === "IN_PROGRESS").length;
+      const closed   = tickets.filter((t) => t.status === "CLOSED" || t.status === "RESOLVED").length;
+      const breaches = tickets.filter((t) => t.slaBreach).length;
       const slaPercent = total > 0 ? Math.round(((total - breaches) / total) * 1000) / 10 : 100;
-      const resTickets = g.tickets.filter((t) => t.resolutionTimeMinutes != null);
+      const resTickets = tickets.filter((t) => t.resolutionTimeMinutes != null);
       const avgRes = resTickets.length > 0
         ? resTickets.reduce((s, t) => s + (t.resolutionTimeMinutes ?? 0), 0) / resTickets.length / 60
         : 0;
 
       return {
-        groupId:      g.id,
-        groupName:    g.name,
+        groupId,
+        groupName:    name,
         totalTickets: total,
         open,
         closed,
@@ -179,6 +189,7 @@ export async function getGroupPerformance(period: TimePeriod): Promise<GroupPerf
         avgResolutionHours: Math.round(avgRes * 10) / 10,
       };
     })
+    .filter((g) => g.totalTickets > 0)
     .sort((a, b) => b.totalTickets - a.totalTickets);
 }
 

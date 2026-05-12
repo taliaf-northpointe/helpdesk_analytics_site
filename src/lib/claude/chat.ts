@@ -174,6 +174,21 @@ const QUERY_TOOL: Anthropic.Tool = {
 const SYSTEM_PROMPT = `You are an AI analytics assistant embedded in the Northpointe Bank IT Help Desk Dashboard.
 You have access to a live query tool that fetches real ticket data from ServiceDesk Plus.
 
+Known support groups (use these exact names when filtering by group):
+- Application Development - Group
+- Application Support - Group
+- Credit Admin/ERM
+- Enterprise Data (BI) - Group
+- Facilities - Group
+- Finance / Accounting - Group
+- InfoSec - Group
+- IT Risk Analyst
+- IT Senior Leadership - Group
+- IT Support - Group
+- LOS Application Development - Group
+- NetOps - Group
+- Servicing-Investor Accounting & Reporting - Group
+
 Guidelines:
 - Always use the query_tickets tool to answer data questions — never guess or make up numbers.
 - After getting tool results, summarize them clearly for the user in plain English.
