@@ -49,6 +49,13 @@ export default function TicketsPage() {
   const [status,   setStatus]   = useState("");
   const [priority, setPriority] = useState("");
 
+  // Sync URL ?q= param into state (handles header search when already on this page)
+  useEffect(() => {
+    const q = searchParams.get("q") ?? "";
+    setSearch(q);
+    setPage(1);
+  }, [searchParams]);
+
   const fetchTickets = useCallback(async () => {
     setLoading(true);
     try {
