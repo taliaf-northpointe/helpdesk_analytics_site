@@ -61,13 +61,14 @@ export default function TicketsPage() {
   }, [searchParams]);
 
   const handleSort = useCallback((col: string) => {
-    setSortBy((prev) => {
-      if (prev === col) setSortDir((d) => d === "asc" ? "desc" : "asc");
-      else { setSortDir("asc"); }
-      return col;
-    });
+    if (sortBy === col) {
+      setSortDir((d) => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(col);
+      setSortDir("asc");
+    }
     setPage(1);
-  }, []);
+  }, [sortBy]);
 
   const fetchTickets = useCallback(async () => {
     setLoading(true);
