@@ -1,11 +1,12 @@
 "use client";
 
-import { Search, Bell, Sun, Moon, RefreshCw } from "lucide-react";
+import { Search, Sun, Moon, RefreshCw } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { NotificationBell } from "./NotificationBell";
 
 interface HeaderProps {
   greeting:  string;
@@ -88,10 +89,7 @@ export function Header({ greeting, subtitle, onRefresh, refreshing, rightSlot }:
           </button>
 
           {/* Notifications */}
-          <button className="relative flex items-center justify-center w-9 h-9 rounded-lg border border-border hover:bg-muted transition-colors">
-            <Bell size={15} className="text-muted-foreground" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive" />
-          </button>
+          <NotificationBell />
         </div>
       </div>
 
