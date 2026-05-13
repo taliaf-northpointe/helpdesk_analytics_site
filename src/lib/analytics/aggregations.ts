@@ -108,8 +108,9 @@ export async function getTrends(period: TimePeriod, filters?: ReportFilters): Pr
   const { from, to } = getDateRange(period);
 
   const tickets = await prisma.ticket.findMany({
-    where: buildWhere({ from, to }, filters),
-    select: { createdAt: true, status: true },
+    where:   buildWhere({ from, to }, filters),
+    select:  { createdAt: true, status: true },
+    orderBy: { createdAt: "asc" },
   });
 
   const bucket = (date: Date) => {
