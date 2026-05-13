@@ -18,6 +18,21 @@ export async function GET(req: NextRequest) {
   const search   = params.get("q") ?? undefined;
   const from     = params.get("from") ? new Date(params.get("from")!) : undefined;
   const to       = params.get("to")   ? new Date(params.get("to")!)   : undefined;
+  const sortBy   = params.get("sortBy")  ?? "created";
+  const sortDir  = (params.get("sortDir") === "asc" ? "asc" : "desc") as "asc" | "desc";
+
+  const orderByMap: Record<string, object> = {
+    id:         { displayId: sortDir },
+    subject:    { subject:   sortDir },
+    status:     { status:    sortDir },
+    priority:   { priority:  sortDir },
+    group:      { group:      { name: sortDir } },
+    technician: { technician: { name: sortDir } },
+    category:   { category:   { name: sortDir } },
+    created:    { createdAt: sortDir },
+    sla:        { slaBreach: sortDir },
+  };
+  const orderBy = orderByMap[sortBy] ?? { createdAt: "desc" };
 
   const where = {
     ...(statusIn  ? { status:   { in: statusIn as never[] } } : status ? { status: status as never } : {}),
@@ -37,7 +52,7 @@ export async function GET(req: NextRequest) {
       where,
       take:    pageSize,
       skip:    (page - 1) * pageSize,
-      orderBy: { createdAt: "desc" },
+      orderBy,
       include: { group: true, technician: true, category: true, subcategory: true },
     }),
     prisma.ticket.count({ where }),

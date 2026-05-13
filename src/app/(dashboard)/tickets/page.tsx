@@ -6,7 +6,7 @@ import { Header } from "@/components/layout/Header";
 import { ChatWidget } from "@/components/chatbot/ChatWidget";
 import { TicketDetailPanel } from "@/components/tickets/TicketDetailPanel";
 import { cn, STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, formatDate } from "@/lib/utils";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 
 interface Ticket {
   id: string;
@@ -49,6 +49,8 @@ export default function TicketsPage() {
   const [search,     setSearch]     = useState(() => searchParams.get("q") ?? "");
   const [status,     setStatus]     = useState("");
   const [priority,   setPriority]   = useState("");
+  const [sortBy,     setSortBy]     = useState("created");
+  const [sortDir,    setSortDir]    = useState<"asc" | "desc">("desc");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Sync URL ?q= param into state (handles header search when already on this page)
@@ -58,10 +60,19 @@ export default function TicketsPage() {
     setPage(1);
   }, [searchParams]);
 
+  const handleSort = useCallback((col: string) => {
+    setSortBy((prev) => {
+      if (prev === col) setSortDir((d) => d === "asc" ? "desc" : "asc");
+      else { setSortDir("asc"); }
+      return col;
+    });
+    setPage(1);
+  }, []);
+
   const fetchTickets = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), size: "25" });
+      const params = new URLSearchParams({ page: String(page), size: "25", sortBy, sortDir });
       if (search)   params.set("q",        search);
       if (status)   params.set("status",   status);
       if (priority) params.set("priority", priority);
@@ -71,7 +82,7 @@ export default function TicketsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, status, priority]);
+  }, [page, search, status, priority, sortBy, sortDir]);
 
   useEffect(() => { fetchTickets(); }, [fetchTickets]);
 
@@ -120,9 +131,32 @@ export default function TicketsPage() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b border-border">
                 <tr>
-                  {["ID", "Subject", "Status", "Priority", "Group", "Technician", "Category", "Created", "SLA"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
-                  ))}
+                  {([
+                    { key: "id",         label: "ID"         },
+                    { key: "subject",    label: "Subject"    },
+                    { key: "status",     label: "Status"     },
+                    { key: "priority",   label: "Priority"   },
+                    { key: "group",      label: "Group"      },
+                    { key: "technician", label: "Technician" },
+                    { key: "category",   label: "Category"   },
+                    { key: "created",    label: "Created"    },
+                    { key: "sla",        label: "SLA"        },
+                  ] as { key: string; label: string }[]).map(({ key, label }) => {
+                    const active = sortBy === key;
+                    const Icon = active ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+                    return (
+                      <th
+                        key={key}
+                        onClick={() => handleSort(key)}
+                        className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap cursor-pointer select-none hover:text-foreground transition-colors"
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          {label}
+                          <Icon size={11} className={active ? "text-brand-primary" : "opacity-40"} />
+                        </span>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
