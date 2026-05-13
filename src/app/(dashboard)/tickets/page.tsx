@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { ChatWidget } from "@/components/chatbot/ChatWidget";
 import { cn, STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, formatDate } from "@/lib/utils";
-import { Search, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Ticket {
   id: string;
@@ -39,10 +40,11 @@ const STATUS_OPTIONS = [
 const PRIORITY_OPTIONS = ["", "URGENT", "HIGH", "MEDIUM", "LOW"];
 
 export default function TicketsPage() {
+  const searchParams = useSearchParams();
   const [data,     setData]     = useState<TicketsResponse | null>(null);
   const [loading,  setLoading]  = useState(true);
   const [page,     setPage]     = useState(1);
-  const [search,   setSearch]   = useState("");
+  const [search,   setSearch]   = useState(() => searchParams.get("q") ?? "");
   const [status,   setStatus]   = useState("");
   const [priority, setPriority] = useState("");
 

@@ -3,6 +3,7 @@
 import { Search, Bell, Sun, Moon, RefreshCw } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -17,6 +18,13 @@ interface HeaderProps {
 export function Header({ greeting, subtitle, onRefresh, refreshing, rightSlot }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const [searchValue, setSearchValue] = useState("");
+  const router = useRouter();
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter" || !searchValue.trim()) return;
+    router.push(`/tickets?q=${encodeURIComponent(searchValue.trim())}`);
+    setSearchValue("");
+  };
 
   const handleRefresh = () => {
     if (onRefresh) {
@@ -43,7 +51,8 @@ export function Header({ greeting, subtitle, onRefresh, refreshing, rightSlot }:
             <input
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Search tickets, reports, metrics…"
+              placeholder="Search tickets…"
+              onKeyDown={handleSearch}
               className="pl-9 pr-4 py-2 text-sm rounded-lg border border-border bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/30 w-64 placeholder:text-muted-foreground"
             />
           </div>
