@@ -186,37 +186,54 @@ export async function runSync(type: string = "INCREMENTAL") {
           ? resMinutes > slaRecord.resolutionTime
           : (t.is_overdue ?? false);
 
-        const shared = {
-          subject:      t.subject,
-          status:       mapStatus(t.status?.name ?? ""),
-          priority:     mapPriority(t.priority?.name ?? ""),
+        const groupDbId       = t.group?.id       ? groupMap.get(t.group.id)       : undefined;
+        const technicianDbId  = t.technician?.id  ? techMap.get(t.technician.id)   : undefined;
+        const categoryDbId    = t.category?.id    ? catMap.get(t.category.id)      : undefined;
+        const subcategoryDbId = t.subcategory?.id ? subMap.get(t.subcategory.id)   : undefined;
+        const displayId       = t.display_id != null ? String(t.display_id) : undefined;
+
+        const scalarData = {
+          subject:               t.subject,
+          status:                mapStatus(t.status?.name ?? ""),
+          priority:              mapPriority(t.priority?.name ?? ""),
           slaBreach,
-          groupId:       t.group?.id       ? groupMap.get(t.group.id)       : undefined,
-          technicianId:  t.technician?.id  ? techMap.get(t.technician.id)   : undefined,
-          categoryId:    t.category?.id    ? catMap.get(t.category.id)      : undefined,
-          subcategoryId: t.subcategory?.id ? subMap.get(t.subcategory.id)   : undefined,
-          slaId:         slaInternalId,
           resolvedAt,
           closedAt,
           dueDate,
           resolutionTimeMinutes: resMinutes,
+          ...(displayId ? { displayId } : {}),
         };
 
-        const displayId = t.display_id != null ? String(t.display_id) : undefined;
+        // Relation connect/disconnect helpers (update style supports both)
+        const relUpdate = {
+          group:       groupDbId       ? { connect: { id: groupDbId } }       : { disconnect: true },
+          technician:  technicianDbId  ? { connect: { id: technicianDbId } }  : { disconnect: true },
+          category:    categoryDbId    ? { connect: { id: categoryDbId } }    : { disconnect: true },
+          subcategory: subcategoryDbId ? { connect: { id: subcategoryDbId } } : { disconnect: true },
+          sla:         slaInternalId   ? { connect: { id: slaInternalId } }   : { disconnect: true },
+        };
+        // Create style: just connect, omit when null
+        const relCreate = {
+          ...(groupDbId       ? { group:       { connect: { id: groupDbId } } }       : {}),
+          ...(technicianDbId  ? { technician:  { connect: { id: technicianDbId } } }  : {}),
+          ...(categoryDbId    ? { category:    { connect: { id: categoryDbId } } }    : {}),
+          ...(subcategoryDbId ? { subcategory: { connect: { id: subcategoryDbId } } } : {}),
+          ...(slaInternalId   ? { sla:         { connect: { id: slaInternalId } } }   : {}),
+        };
 
         await prisma.ticket.upsert({
           where:  { externalId: t.id },
-          update: { ...shared, updatedAt: new Date(), ...(displayId ? { displayId } : {}) },
+          update: { ...scalarData, ...relUpdate, updatedAt: new Date() },
           create: {
-            ...shared,
-            externalId:  t.id,
-            displayId,
+            ...scalarData,
+            ...relCreate,
+            externalId:   t.id,
             createdAt,
-            updatedAt:   createdAt,
-            createdDay:  createdAt.getDate(),
+            updatedAt:    createdAt,
+            createdDay:   createdAt.getDate(),
             createdMonth: createdAt.getMonth() + 1,
-            createdYear: createdAt.getFullYear(),
-            syncJobId:   job.id,
+            createdYear:  createdAt.getFullYear(),
+            syncJob:      { connect: { id: job.id } },
           },
         });
         upserted++;
