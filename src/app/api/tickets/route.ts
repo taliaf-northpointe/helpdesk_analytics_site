@@ -25,7 +25,10 @@ export async function GET(req: NextRequest) {
     ...(groupId  ? { groupId } : {}),
     ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}),
     ...(search ? {
-      subject: { contains: search, mode: "insensitive" as const },
+      OR: [
+        { subject:   { contains: search } },
+        { displayId: { contains: search } },
+      ],
     } : {}),
   };
 

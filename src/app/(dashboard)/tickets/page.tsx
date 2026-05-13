@@ -10,6 +10,7 @@ import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 interface Ticket {
   id: string;
   externalId: string;
+  displayId?: string | null;
   subject: string;
   status: string;
   priority: string;
@@ -50,14 +51,17 @@ export default function TicketsPage() {
 
   const fetchTickets = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), size: "25" });
-    if (search)   params.set("q",        search);
-    if (status)   params.set("status",   status);
-    if (priority) params.set("priority", priority);
-    const res  = await fetch(`/api/tickets?${params}`);
-    const json = await res.json() as TicketsResponse;
-    setData(json);
-    setLoading(false);
+    try {
+      const params = new URLSearchParams({ page: String(page), size: "25" });
+      if (search)   params.set("q",        search);
+      if (status)   params.set("status",   status);
+      if (priority) params.set("priority", priority);
+      const res  = await fetch(`/api/tickets?${params}`);
+      const json = await res.json() as TicketsResponse;
+      setData(json);
+    } finally {
+      setLoading(false);
+    }
   }, [page, search, status, priority]);
 
   useEffect(() => { fetchTickets(); }, [fetchTickets]);
@@ -123,7 +127,7 @@ export default function TicketsPage() {
                   ))
                   : data?.tickets.map((ticket) => (
                     <tr key={ticket.id} className="border-b border-border/50 hover:bg-muted/40 transition-colors">
-                      <td className="px-4 py-3 text-muted-foreground font-mono text-xs whitespace-nowrap">#{ticket.externalId.replace("sdp-", "")}</td>
+                      <td className="px-4 py-3 text-muted-foreground font-mono text-xs whitespace-nowrap">#{ticket.displayId ?? ticket.externalId.replace("sdp-", "")}</td>
                       <td className="px-4 py-3 font-medium text-foreground max-w-xs truncate">{ticket.subject}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", STATUS_COLORS[ticket.status])}>

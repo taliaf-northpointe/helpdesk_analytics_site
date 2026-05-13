@@ -202,12 +202,15 @@ export async function runSync(type: string = "INCREMENTAL") {
           resolutionTimeMinutes: resMinutes,
         };
 
+        const displayId = t.display_id != null ? String(t.display_id) : undefined;
+
         await prisma.ticket.upsert({
           where:  { externalId: t.id },
-          update: { ...shared, updatedAt: new Date() },
+          update: { ...shared, updatedAt: new Date(), ...(displayId ? { displayId } : {}) },
           create: {
             ...shared,
             externalId:  t.id,
+            displayId,
             createdAt,
             updatedAt:   createdAt,
             createdDay:  createdAt.getDate(),

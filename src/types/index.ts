@@ -138,6 +138,7 @@ export interface ChatResponse {
 
 export interface SDPTicket {
   id:          string;
+  display_id?: string | number;
   subject:     string;
   status:      { name: string };
   priority:    { name: string };
