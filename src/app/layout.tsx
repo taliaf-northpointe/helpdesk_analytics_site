@@ -9,6 +9,10 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 export const metadata: Metadata = {
   title: "Help Desk Analytics | Northpointe Bank",
   description: "IT Help Desk Ticket Analytics and Reporting Dashboard",
+  icons: {
+    icon:    "/icon.svg",
+    apple:   "/icon.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
