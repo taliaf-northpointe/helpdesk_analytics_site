@@ -18,6 +18,7 @@ import { DashboardFooter }    from "@/components/dashboard/DashboardFooter";
 import { ChatWidget }         from "@/components/chatbot/ChatWidget";
 import { getGreeting, formatNumber, formatPercent } from "@/lib/utils";
 import type { DashboardData, TimePeriod } from "@/types";
+import { toast } from "sonner";
 
 const PERIODS: { key: TimePeriod; label: string; sub: string }[] = [
   { key: "today",        label: "Today",          sub: "created today"          },
@@ -92,6 +93,41 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    const toastId = toast.loading("Syncing latest tickets from SDP…");
+    try {
+      const startRes = await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "INCREMENTAL" }),
+      });
+      const startData = await startRes.json() as { started?: boolean; error?: string };
+      if (!startData.started && startRes.status !== 409) {
+        toast.error(startData.error ?? "Failed to start sync", { id: toastId });
+        return;
+      }
+
+      // Poll until complete (max 90s)
+      const deadline = Date.now() + 90_000;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 2500));
+        const s = await fetch("/api/sync").then((r) => r.json()) as { status: string };
+        if (s.status === "COMPLETED" || s.status === "FAILED") {
+          if (s.status === "FAILED") toast.error("Sync failed", { id: toastId });
+          break;
+        }
+      }
+
+      toast.success("Data refreshed", { id: toastId });
+      await fetchData(period, false);
+    } catch {
+      toast.error("Refresh failed", { id: toastId });
+    } finally {
+      setRefreshing(false);
+    }
+  }, [period, fetchData]);
+
   useEffect(() => { fetchData(period); }, [period, fetchData]);
 
   // Auto-refresh every 5 minutes
@@ -108,7 +144,7 @@ export default function DashboardPage() {
       <Header
         greeting={getGreeting() + ", Talia"}
         subtitle="Here are your latest ticket analytics and support trends."
-        onRefresh={() => fetchData(period, true)}
+        onRefresh={handleRefresh}
         refreshing={refreshing}
       />
 
