@@ -189,7 +189,7 @@ export default function TicketsPage() {
                       <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDate(ticket.createdAt, "MMM d, yyyy")}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {ticket.slaBreach
-                          ? <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">Breach</span>
+                          ? <span className="text-xs px-2 py-0.5 rounded-full bg-raspberry-100 text-raspberry-700 dark:bg-raspberry-900/30 dark:text-raspberry-400 font-medium">Breach</span>
                           : <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">OK</span>
                         }
                       </td>

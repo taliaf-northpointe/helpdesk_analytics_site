@@ -240,7 +240,7 @@ export default function DashboardPage() {
                         </td>
                         <td className="px-4 py-2.5 whitespace-nowrap">
                           {t.slaBreach
-                            ? <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Breach</span>
+                            ? <span className="text-xs px-2 py-0.5 rounded-full bg-raspberry-100 text-raspberry-700 font-medium">Breach</span>
                             : <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">OK</span>}
                         </td>
                       </tr>

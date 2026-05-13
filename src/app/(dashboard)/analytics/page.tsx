@@ -37,7 +37,7 @@ interface LiveData {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const AGE_COLOR = (days: number) =>
-  days >= 30 ? "text-red-600 font-semibold"
+  days >= 30 ? "text-raspberry-600 font-semibold"
   : days >= 14 ? "text-amber-600 font-medium"
   : "text-muted-foreground";
 
@@ -120,7 +120,7 @@ export default function LiveQueuePage() {
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
             { label: "Total Open",     value: data?.totalOpen,     icon: Ticket,       bg: "bg-blue-100",   text: "text-blue-700"   },
-            { label: "Urgent",         value: data?.urgentOpen,    icon: AlertTriangle, bg: "bg-red-100",    text: "text-red-700"    },
+            { label: "Urgent",         value: data?.urgentOpen,    icon: AlertTriangle, bg: "bg-raspberry-100", text: "text-raspberry-700" },
             { label: "SLA Breaching",  value: data?.slaBreaching,  icon: ShieldAlert,  bg: "bg-orange-100", text: "text-orange-700" },
             { label: "Oldest (days)",  value: data?.oldestAgeDays, icon: Clock,        bg: "bg-purple-100", text: "text-purple-700" },
           ].map(({ label, value, icon: Icon, bg, text }) => (
@@ -302,7 +302,7 @@ export default function LiveQueuePage() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {t.slaBreach
-                          ? <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Breach</span>
+                          ? <span className="text-xs px-2 py-0.5 rounded-full bg-raspberry-100 text-raspberry-700 font-medium">Breach</span>
                           : <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">OK</span>}
                       </td>
                     </tr>

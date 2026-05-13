@@ -62,13 +62,23 @@ const config: Config = {
           DEFAULT:    "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Raspberry — replaces red for alerts/breaches throughout the app
+        raspberry: {
+          50:  "#fff0f6",
+          100: "#ffdaea",
+          400: "#f04d82",
+          500: "#d4145a",
+          600: "#af1049",
+          700: "#890d39",
+          900: "#42061b",
+        },
         // Status colors
         status: {
           open:       "#3B82F6",
           inprogress: "#F59E0B",
           resolved:   "#10B981",
           closed:     "#6B7280",
-          breach:     "#EF4444",
+          breach:     "#D4145A",
         },
         blush: "#ffebef",
       },

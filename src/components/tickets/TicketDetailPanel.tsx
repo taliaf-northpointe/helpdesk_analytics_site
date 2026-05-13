@@ -159,7 +159,7 @@ export function TicketDetailPanel({ ticketId, onClose }: Props) {
                   {PRIORITY_LABELS[data.ticket.priority]}
                 </span>
                 {data.ticket.slaBreach
-                  ? <span className="text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">SLA Breach</span>
+                  ? <span className="text-xs px-2.5 py-1 rounded-full bg-raspberry-100 text-raspberry-700 dark:bg-raspberry-900/30 dark:text-raspberry-400 font-medium">SLA Breach</span>
                   : <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">SLA OK</span>
                 }
               </div>

@@ -36,7 +36,7 @@ export function RecentActivity({ data, loading }: Props) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               {ticket.slaBreach && (
-                <AlertTriangle size={12} className="text-red-500 shrink-0" />
+                <AlertTriangle size={12} className="text-raspberry-500 shrink-0" />
               )}
               <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
                 #{ticket.externalId.replace("sdp-", "")} — {ticket.subject}

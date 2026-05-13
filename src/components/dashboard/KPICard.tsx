@@ -65,7 +65,7 @@ export function KPICard({ title, subtitle, value, delta, icon: Icon, iconBg, suf
             <div className={cn(
               "flex items-center gap-1 text-xs font-medium",
               isPositive ? "text-emerald-600 dark:text-emerald-400" : "",
-              isNegative ? "text-red-500 dark:text-red-400" : "",
+              isNegative ? "text-raspberry-500 dark:text-raspberry-400" : "",
               !isPositive && !isNegative ? "text-muted-foreground" : "",
             )}>
               {isPositive ? <TrendingUp size={12} /> : isNegative ? <TrendingDown size={12} /> : <Minus size={12} />}

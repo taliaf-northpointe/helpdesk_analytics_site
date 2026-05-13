@@ -12,7 +12,7 @@ function SLABadge({ value }: { value: number }) {
   const color =
     value >= 95 ? "text-emerald-600 dark:text-emerald-400" :
     value >= 90 ? "text-amber-600 dark:text-amber-400"     :
-                  "text-red-500   dark:text-red-400";
+                  "text-raspberry-500 dark:text-raspberry-400";
   return <span className={cn("font-semibold tabular-nums", color)}>{value.toFixed(1)}%</span>;
 }
 

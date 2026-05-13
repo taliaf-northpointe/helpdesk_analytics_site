@@ -56,7 +56,7 @@ export default function SLAMonitorPage() {
           <div className="lg:col-span-2 grid grid-cols-2 gap-4">
             {[
               { label: "SLA Compliant",  value: data ? (data.kpis.totalTickets - breaches).toLocaleString() : "—", icon: ShieldCheck, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
-              { label: "SLA Breaches",   value: breaches.toLocaleString(), icon: ShieldX, color: "text-red-600", bg: "bg-red-50 dark:bg-red-900/20" },
+              { label: "SLA Breaches",   value: breaches.toLocaleString(), icon: ShieldX, color: "text-raspberry-600", bg: "bg-raspberry-50 dark:bg-raspberry-900/20" },
               { label: "Total Tickets",  value: data?.kpis.totalTickets.toLocaleString() ?? "—", icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-900/20" },
               { label: "Delta vs Last Month", value: data?.kpis.deltaSla !== undefined ? `${data.kpis.deltaSla > 0 ? "+" : ""}${data.kpis.deltaSla.toFixed(1)}%` : "—", icon: TrendingUp, color: "text-brand-secondary", bg: "bg-blue-50 dark:bg-blue-900/20" },
             ].map(({ label, value, icon: Icon, color, bg }) => (
@@ -84,7 +84,7 @@ export default function SLAMonitorPage() {
                   <div className="flex-1 bg-muted rounded-full h-2.5 overflow-hidden">
                     <div
                       className={cn("h-full rounded-full transition-all duration-700",
-                        g.slaPercent >= 95 ? "bg-emerald-500" : g.slaPercent >= 90 ? "bg-amber-500" : "bg-red-500",
+                        g.slaPercent >= 95 ? "bg-emerald-500" : g.slaPercent >= 90 ? "bg-amber-500" : "bg-raspberry-500",
                       )}
                       style={{ width: `${g.slaPercent}%` }}
                     />
@@ -93,7 +93,7 @@ export default function SLAMonitorPage() {
                     "w-14 text-right text-sm font-semibold tabular-nums shrink-0",
                     g.slaPercent >= 95 ? "text-emerald-600 dark:text-emerald-400" :
                     g.slaPercent >= 90 ? "text-amber-600 dark:text-amber-400" :
-                                          "text-red-500",
+                                          "text-raspberry-500",
                   )}>
                     {g.slaPercent.toFixed(1)}%
                   </span>

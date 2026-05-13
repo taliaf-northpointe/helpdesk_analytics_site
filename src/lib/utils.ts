@@ -137,7 +137,7 @@ export const STATUS_COLORS: Record<string, string> = {
   "Pending Requester Response":    "bg-amber-50   text-amber-800",
   "On Hold / Waiting for Vendor":  "bg-orange-50  text-orange-700",
   "Closed":                        "bg-slate-100  text-slate-600",
-  "Cancelled":                     "bg-red-50     text-red-700",
+  "Cancelled":                     "bg-raspberry-50  text-raspberry-700",
   "Awaiting CAB":                  "bg-violet-50  text-violet-700",
   "Awaiting Peer Review":          "bg-teal-50    text-teal-700",
   "Awaiting prod sign-off":        "bg-green-50   text-green-700",
@@ -155,5 +155,5 @@ export const PRIORITY_COLORS: Record<string, string> = {
   LOW:    "bg-gray-100  text-gray-600",
   MEDIUM: "bg-blue-100  text-blue-700",
   HIGH:   "bg-orange-100 text-orange-700",
-  URGENT: "bg-red-100   text-red-700",
+  URGENT: "bg-raspberry-100 text-raspberry-700",
 };

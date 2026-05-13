@@ -57,7 +57,7 @@ export function TopAgents({ data, loading }: Props) {
             "text-sm font-semibold tabular-nums text-right",
             agent.slaPercent >= 95 ? "text-emerald-600 dark:text-emerald-400" :
             agent.slaPercent >= 90 ? "text-amber-600 dark:text-amber-400" :
-                                      "text-red-500",
+                                      "text-raspberry-500",
           )}>
             {agent.slaPercent.toFixed(1)}%
           </span>

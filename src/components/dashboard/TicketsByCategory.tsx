@@ -10,7 +10,7 @@ interface Props {
 
 const TrendIcon = ({ trend }: { trend: "up" | "down" | "flat" }) => {
   if (trend === "up")   return <TrendingUp  size={14} className="text-emerald-500" />;
-  if (trend === "down") return <TrendingDown size={14} className="text-red-500" />;
+  if (trend === "down") return <TrendingDown size={14} className="text-raspberry-500" />;
   return <Minus size={14} className="text-muted-foreground" />;
 };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Bell, ShieldAlert, UserX, RefreshCw, User, CheckCircle } from "lucide-react";
+import { Bell, ShieldAlert, UserX, RefreshCw, User, CheckCircle, CheckCheck } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
@@ -15,12 +15,42 @@ interface NotifData {
   total:          number;
 }
 
+interface DismissedState {
+  slaBreaches:     number;
+  unassignedUrgent: number;
+  assignedToMe:    number;
+  syncFailed:      boolean;
+}
+
+const STORAGE_KEY = "notif-dismissed";
+
+function loadDismissed(): DismissedState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as DismissedState) : null;
+  } catch { return null; }
+}
+
+function hasNewAlerts(data: NotifData, dismissed: DismissedState | null): boolean {
+  if (!dismissed) return data.total > 0;
+  return (
+    data.slaBreaches     > dismissed.slaBreaches     ||
+    data.unassignedUrgent > dismissed.unassignedUrgent ||
+    data.assignedToMe    > dismissed.assignedToMe    ||
+    (data.syncFailed && !dismissed.syncFailed)
+  );
+}
+
 export function NotificationBell() {
-  const [open,    setOpen]    = useState(false);
-  const [data,    setData]    = useState<NotifData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [open,      setOpen]      = useState(false);
+  const [data,      setData]      = useState<NotifData | null>(null);
+  const [loading,   setLoading]   = useState(true);
+  const [dismissed, setDismissed] = useState<DismissedState | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Load dismissed state from localStorage on mount
+  useEffect(() => { setDismissed(loadDismissed()); }, []);
 
   const fetchNotifs = useCallback(() => {
     fetch("/api/notifications")
@@ -44,14 +74,27 @@ export function NotificationBell() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const count = data?.total ?? 0;
+  const handleMarkRead = useCallback(() => {
+    if (!data) return;
+    const next: DismissedState = {
+      slaBreaches:      data.slaBreaches,
+      unassignedUrgent: data.unassignedUrgent,
+      assignedToMe:     data.assignedToMe,
+      syncFailed:       data.syncFailed,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    setDismissed(next);
+  }, [data]);
+
+  const hasNew = !loading && data ? hasNewAlerts(data, dismissed) : false;
+  const count  = data?.total ?? 0;
 
   const items = data ? [
     {
       show:  data.slaBreaches > 0,
       icon:  ShieldAlert,
-      color: "text-red-500",
-      bg:    "bg-red-100 dark:bg-red-900/30",
+      color: "text-raspberry-500",
+      bg:    "bg-raspberry-100 dark:bg-raspberry-900/30",
       title: "SLA Breaches",
       body:  `${data.slaBreaches} open ticket${data.slaBreaches !== 1 ? "s" : ""} past SLA target`,
       href:  "/tickets",
@@ -103,12 +146,12 @@ export function NotificationBell() {
         )}
       >
         <Bell size={15} className="text-muted-foreground" />
-        {!loading && count > 0 && (
+        {!loading && hasNew && (
           <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
             {count > 99 ? "99+" : count}
           </span>
         )}
-        {!loading && count === 0 && (
+        {!loading && !hasNew && (
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500" />
         )}
       </button>
@@ -118,9 +161,21 @@ export function NotificationBell() {
         <div className="absolute right-0 top-11 w-80 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <p className="text-sm font-semibold text-foreground">Notifications</p>
-            <button onClick={fetchNotifs} className="text-muted-foreground hover:text-foreground transition-colors">
-              <RefreshCw size={13} />
-            </button>
+            <div className="flex items-center gap-2">
+              {hasNew && (
+                <button
+                  onClick={handleMarkRead}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  title="Mark all as read"
+                >
+                  <CheckCheck size={13} />
+                  Mark read
+                </button>
+              )}
+              <button onClick={fetchNotifs} className="text-muted-foreground hover:text-foreground transition-colors" title="Refresh">
+                <RefreshCw size={13} />
+              </button>
+            </div>
           </div>
 
           {loading ? (
