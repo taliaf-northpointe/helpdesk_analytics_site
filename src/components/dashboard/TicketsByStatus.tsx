@@ -1,9 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import type { StatusBreakdown } from "@/types";
 
-const STATUS_CHART_COLORS: Record<string, string> = {
+// Blue theme — distinct semantic colors per status
+const STATUS_COLORS_BLUE: Record<string, string> = {
   "Open":                          "#3B82F6",
   "Pending Requester Response":    "#D97706",
   "On Hold / Waiting for Vendor":  "#F97316",
@@ -15,12 +17,38 @@ const STATUS_CHART_COLORS: Record<string, string> = {
   "Awaiting Vendor Action":        "#FB7185",
 };
 
+// Pink theme — very distinct shades of pink; Closed stays gray
+const STATUS_COLORS_PINK: Record<string, string> = {
+  "Open":                          "#DB7093", // palevioletred — brand primary
+  "Pending Requester Response":    "#F48FB1", // light pink
+  "On Hold / Waiting for Vendor":  "#C2185B", // deep rose
+  "Closed":                        "#94A3B8", // gray
+  "Cancelled":                     "#880E4F", // dark wine rose
+  "Awaiting CAB":                  "#E91E63", // hot pink
+  "Awaiting Peer Review":          "#F8BBD0", // blush / palest pink
+  "Awaiting prod sign-off":        "#AD1457", // magenta rose
+  "Awaiting Vendor Action":        "#FFA6C9", // soft pastel pink
+};
+
 interface Props {
   data: StatusBreakdown;
   loading?: boolean;
 }
 
 export function TicketsByStatus({ data, loading }: Props) {
+  const [colors, setColors] = useState(STATUS_COLORS_BLUE);
+
+  useEffect(() => {
+    const update = () =>
+      setColors(document.documentElement.classList.contains("theme-pink")
+        ? STATUS_COLORS_PINK
+        : STATUS_COLORS_BLUE);
+    update();
+    const obs = new MutationObserver(update);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
   if (loading) return <div className="animate-pulse h-52 bg-muted rounded-lg" />;
 
   const chartData = Object.entries(data)
@@ -43,7 +71,7 @@ export function TicketsByStatus({ data, loading }: Props) {
           {chartData.map((entry) => (
             <Cell
               key={entry.name}
-              fill={STATUS_CHART_COLORS[entry.name] ?? "#94A3B8"}
+              fill={colors[entry.name] ?? "#94A3B8"}
             />
           ))}
         </Pie>

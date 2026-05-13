@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
@@ -10,6 +11,9 @@ interface Props {
   data: TrendPoint[];
   loading?: boolean;
 }
+
+const BLUE = { total: "#2C4A6E", closed: "#4A9BB8" };
+const PINK = { total: "#DB7093", closed: "#E8B4C8" };
 
 const CustomTooltip = ({ active, payload, label }: {
   active?: boolean;
@@ -32,10 +36,19 @@ const CustomTooltip = ({ active, payload, label }: {
 };
 
 export function TicketVolumeChart({ data, loading }: Props) {
+  const [colors, setColors] = useState(BLUE);
+
+  useEffect(() => {
+    const update = () =>
+      setColors(document.documentElement.classList.contains("theme-pink") ? PINK : BLUE);
+    update();
+    const obs = new MutationObserver(update);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
   if (loading) {
-    return (
-      <div className="animate-pulse h-64 bg-muted rounded-lg" />
-    );
+    return <div className="animate-pulse h-64 bg-muted rounded-lg" />;
   }
 
   return (
@@ -54,13 +67,9 @@ export function TicketVolumeChart({ data, loading }: Props) {
           tickLine={false}
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted))" }} />
-        <Legend
-          iconType="circle"
-          iconSize={8}
-          wrapperStyle={{ fontSize: 11 }}
-        />
-        <Bar dataKey="count"  name="Total"   fill="#2C4A6E" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="closed" name="Closed"  fill="#4A9BB8" radius={[4, 4, 0, 0]} />
+        <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+        <Bar dataKey="count"  name="Total"  fill={colors.total}  radius={[4, 4, 0, 0]} />
+        <Bar dataKey="closed" name="Closed" fill={colors.closed} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
