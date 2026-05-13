@@ -101,6 +101,27 @@ export async function sdpGet<T>(
   );
 }
 
+export interface SdpNote {
+  id: string;
+  description?: string;
+  created_time?: { value: string; display_value?: string };
+  created_by?: { name: string };
+  show_to_requester?: boolean;
+}
+
+/** Fetch notes/conversation for a ticket by INTERNAL id. */
+export async function sdpGetNotes(internalId: string): Promise<SdpNote[]> {
+  try {
+    const data = await sdpGet<{ notes?: SdpNote[] }>(
+      `/requests/${encodeURIComponent(internalId)}/notes`,
+      { row_count: 100, start_index: 1 },
+    );
+    return data.notes ?? [];
+  } catch {
+    return [];
+  }
+}
+
 /** Fetch full ticket detail by INTERNAL id. */
 export async function sdpGetTicket(internalId: string): Promise<Record<string, unknown>> {
   const token    = await getZohoAccessToken();

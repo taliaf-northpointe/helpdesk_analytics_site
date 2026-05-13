@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { ChatWidget } from "@/components/chatbot/ChatWidget";
+import { TicketDetailPanel } from "@/components/tickets/TicketDetailPanel";
 import { cn, STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, formatDate } from "@/lib/utils";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -45,9 +46,10 @@ export default function TicketsPage() {
   const [data,     setData]     = useState<TicketsResponse | null>(null);
   const [loading,  setLoading]  = useState(true);
   const [page,     setPage]     = useState(1);
-  const [search,   setSearch]   = useState(() => searchParams.get("q") ?? "");
-  const [status,   setStatus]   = useState("");
-  const [priority, setPriority] = useState("");
+  const [search,     setSearch]     = useState(() => searchParams.get("q") ?? "");
+  const [status,     setStatus]     = useState("");
+  const [priority,   setPriority]   = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Sync URL ?q= param into state (handles header search when already on this page)
   useEffect(() => {
@@ -133,7 +135,7 @@ export default function TicketsPage() {
                     </tr>
                   ))
                   : data?.tickets.map((ticket) => (
-                    <tr key={ticket.id} className="border-b border-border/50 hover:bg-muted/40 transition-colors">
+                    <tr key={ticket.id} onClick={() => setSelectedId(ticket.id)} className="border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer">
                       <td className="px-4 py-3 text-muted-foreground font-mono text-xs whitespace-nowrap">#{ticket.displayId ?? ticket.externalId.replace("sdp-", "")}</td>
                       <td className="px-4 py-3 font-medium text-foreground max-w-xs truncate">{ticket.subject}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -185,6 +187,8 @@ export default function TicketsPage() {
       </div>
 
       <ChatWidget />
+
+      <TicketDetailPanel ticketId={selectedId} onClose={() => setSelectedId(null)} />
     </div>
   );
 }
