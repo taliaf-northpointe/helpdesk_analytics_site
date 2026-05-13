@@ -35,7 +35,7 @@ export function Header({ greeting, subtitle, onRefresh, refreshing, rightSlot }:
   };
 
   return (
-    <header className="relative flex flex-col gap-3 px-6 pt-6 pb-4 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-20 overflow-hidden">
+    <header className="relative flex flex-col gap-3 px-6 pt-6 pb-4 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-20">
       {/* Top row */}
       <div className="flex items-start justify-between gap-4">
         <div>
