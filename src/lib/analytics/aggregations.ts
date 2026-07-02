@@ -244,7 +244,7 @@ export async function getCategoryBreakdown(period: TimePeriod, filters?: ReportF
   });
   const prevMap = new Map(prevCounts.map((r) => [r.categoryId, r._count.id]));
 
-  return categories
+  const rows = categories
     .map((c) => {
       const count  = c.tickets.length;
       const prev   = prevMap.get(c.id) ?? 0;
@@ -261,8 +261,27 @@ export async function getCategoryBreakdown(period: TimePeriod, filters?: ReportF
           .slice(0, 5),
       } as CategoryBreakdown;
     })
-    .filter((c) => c.count > 0)
-    .sort((a, b) => b.count - a.count);
+    .filter((c) => c.count > 0);
+
+  // "Unassigned" bucket — tickets in the period with no category set.
+  // Skipped when the user is filtering to a specific category.
+  if (!filters?.categoryName) {
+    const [unassigned, prevUnassigned] = await Promise.all([
+      prisma.ticket.count({ where: { ...ticketWhere, categoryId: null } }),
+      prisma.ticket.count({ where: { ...prevWhere,   categoryId: null } }),
+    ]);
+    if (unassigned > 0) {
+      rows.push({
+        categoryId:    "unassigned",
+        categoryName:  "Unassigned",
+        count:         unassigned,
+        trend:         unassigned > prevUnassigned ? "up" : unassigned < prevUnassigned ? "down" : "flat",
+        subcategories: [],
+      } as CategoryBreakdown);
+    }
+  }
+
+  return rows.sort((a, b) => b.count - a.count);
 }
 
 // ─── Technician performance ───────────────────────────────────────────────────
