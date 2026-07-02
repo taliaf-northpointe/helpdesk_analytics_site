@@ -1,199 +1,298 @@
-﻿# Northpointe Help Desk Analytics Dashboard
+# Northpointe Help Desk Analytics Dashboard
 
-A production-ready full-stack ticket analytics platform built for Northpointe Bank IT. Integrates live with ServiceDesk Plus Cloud (SDP On-Demand), provides real-time KPI dashboards, SLA monitoring, and an AI chatbot powered by Claude that queries your live ticket data.
+A full-stack ticket analytics platform for Northpointe Bank IT. It connects live to **ServiceDesk Plus Cloud (SDP On-Demand)**, turns raw ticket data into real-time dashboards, SLA monitoring, and reports, and includes an **AI assistant (Claude)** that answers questions by querying your live SDP data on demand.
 
----
-
-## Tech Stack
-
-| Layer       | Technology                                      |
-|-------------|------------------------------------------------|
-| Frontend    | Next.js 15, React 18, TypeScript, Tailwind CSS |
-| UI          | shadcn/ui, Radix UI, Recharts, Framer Motion   |
-| Backend     | Next.js API Routes                              |
-| Database    | PostgreSQL + Prisma ORM                        |
-| Auth        | NextAuth v4 + Azure AD / Entra ID SSO          |
-| Integration | ServiceDesk Plus Cloud (Zoho OAuth2)           |
-| AI Chatbot  | Anthropic Claude (`@anthropic-ai/sdk`)          |
-| Deployment  | Docker, Azure App Service / Vercel              |
+Built with Next.js 15, TypeScript, Prisma, and Tailwind. Secured with Azure AD (Entra ID) single sign-on.
 
 ---
 
-## Quick Start (Development)
+## Table of Contents
 
-### 1. Prerequisites
-
-- Node.js 20+
-- PostgreSQL 14+ (or Docker)
-- Azure AD app registration
-- Zoho OAuth2 credentials (from SDP API console)
-- Anthropic API key
-
-### 2. Clone & install
-
-```bash
-cd "C:\Users\talia.frazier\OneDrive - Northpointe Bank\Documents"
-# rename/move the northpointe-helpdesk folder as needed
-cd northpointe-helpdesk
-npm install
-```
-
-### 3. Environment variables
-
-```bash
-cp .env.example .env
-# Edit .env and fill in all values (see table below)
-```
-
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `NEXTAUTH_URL` | App URL (http://localhost:3000 in dev) |
-| `NEXTAUTH_SECRET` | Random secret: `openssl rand -base64 32` |
-| `AZURE_AD_CLIENT_ID` | Azure App Registration client ID |
-| `AZURE_AD_CLIENT_SECRET` | Azure App Registration client secret |
-| `AZURE_AD_TENANT_ID` | Your Azure tenant ID |
-| `SDP_BASE_URL` | `https://northpointe.sdpondemand.manageengine.com` |
-| `SDP_PORTAL_NAME` | Your SDP portal name (e.g. `northpointe`) |
-| `SDP_ZOHO_CLIENT_ID` | Zoho OAuth2 client ID |
-| `SDP_ZOHO_CLIENT_SECRET` | Zoho OAuth2 client secret |
-| `SDP_ZOHO_REFRESH_TOKEN` | Zoho OAuth2 refresh token |
-| `ANTHROPIC_API_KEY` | Anthropic API key (`sk-ant-api03-...`) |
-| `CLAUDE_MODEL` | Claude model (default: `claude-sonnet-4-6`) |
-
-### 4. Database setup
-
-```bash
-# Option A: Docker (recommended for dev)
-docker compose up db -d
-
-# Option B: Use existing PostgreSQL instance
-# (update DATABASE_URL in .env)
-
-# Run migrations and seed
-npm run db:generate
-npm run db:push
-npm run db:seed
-```
-
-### 5. Run the app
-
-```bash
-npm run dev
-# Open http://localhost:3000
-```
+- [What It Does](#what-it-does)
+- [Feature Overview](#feature-overview)
+- [Screens](#screens)
+- [AI Assistant](#ai-assistant)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Data Model](#data-model)
+- [ServiceDesk Plus Integration](#servicedesk-plus-integration)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [Deployment](#deployment)
+- [Security Notes](#security-notes)
 
 ---
 
-## Docker (Full Stack)
+## What It Does
 
-```bash
-# Copy and fill in env file
-cp .env.example .env
+The help desk runs on ServiceDesk Plus, but SDP's built-in reporting is slow to slice and hard to share. This dashboard:
 
-# Build and run everything
-docker compose up --build
+- **Syncs** tickets, groups, technicians, categories, and SLAs from SDP into a local database for fast querying.
+- **Visualizes** volume, status, SLA compliance, and team/category performance across any time period (today → this year, plus prior periods for trend comparison).
+- **Surfaces** the live open queue — every currently-open ticket regardless of when it was created — with age and urgency highlighting.
+- **Answers questions in plain English** through a built-in Claude chatbot that queries SDP live.
+- **Links straight back to SDP** so any ticket can be opened in the source system in one click.
 
-# With pgAdmin (database browser)
-docker compose --profile tools up
-# pgAdmin: http://localhost:5050 (admin@northpointe.com / admin)
-```
+It's designed for IT admins, team leads, and management who need at-a-glance operational insight without logging into SDP and building reports by hand.
 
 ---
 
-## Azure Deployment
+## Feature Overview
 
-### Recommended Architecture
+### 📊 Analytics Dashboard
+- **KPI cards** — total tickets, open, closed, SLA compliance, average resolution time, SLA breaches — each with a period-over-period delta (▲/▼ vs. the previous comparable period).
+- **Ticket volume chart** — created vs. open vs. closed over time, bucketed by hour/day/month depending on the selected period.
+- **Status donut** — live distribution across all ticket statuses.
+- **Group performance table** — tickets, open/closed counts, and SLA % per team.
+- **Category breakdown** — ticket counts by category and subcategory, with trend arrows. Categories with zero tickets in the period are hidden, and tickets with no category roll up into an **"Unassigned"** row.
+- **Top agents** and **recent activity** feeds.
+- **Click-to-drill-down** — click any KPI or segment to expand the underlying ticket list inline.
+- **Time period selector** — Today, This Week, This Month, Last Month, This Quarter, Last Quarter, This Year, Last Year.
 
-```
-Azure App Service (Node 20)
-  â””â”€â”€ northpointe-helpdesk (Docker container)
-        â”œâ”€â”€ Next.js app (port 3000)
-        â””â”€â”€ Connects to:
-             â”œâ”€â”€ Azure Database for PostgreSQL (Flexible Server)
-             â”œâ”€â”€ Azure AD (Entra ID) for SSO
-             â””â”€â”€ Anthropic API + SDP Cloud (external)
-```
+### 🎫 Ticket Browser
+- Full searchable, filterable table of every ticket.
+- Filter by status and priority; free-text search across subjects.
+- **Server-side sorting and pagination** on every column.
+- Click any row to open a **detail panel** with the full description, metadata, and the ticket's notes/conversation pulled **live from SDP**.
+- **Open in ServiceDesk Plus** — the panel links directly to the live request in SDP (opens in a new tab); the ticket number is also a direct link.
 
-### Steps
+### 🟢 Live Queue (Analytics)
+- Every currently-open ticket, independent of creation date — the true "what's on our plate right now" view.
+- Summary cards: total open, urgent, SLA-breaching, and oldest ticket age.
+- One-click facet filters by status, group, and agent.
+- **Age highlighting** — tickets aging past 14 / 30 days are color-flagged.
+- **Auto-refreshes every 60 seconds**, with a manual refresh and "updated X ago" indicator.
 
-1. **Azure Database for PostgreSQL** â€” Create a Flexible Server instance, set `DATABASE_URL` in App Service config.
-2. **Azure App Registration** â€” Register app, add redirect URI: `https://<your-app>.azurewebsites.net/api/auth/callback/azure-ad`. Copy client ID/secret/tenant ID.
-3. **Azure App Service** â€” Create Web App (Docker/Linux), configure all env vars under Configuration > Application Settings.
-4. **Deploy**:
-   ```bash
-   # Via Azure Container Registry
-   az acr build --registry <acr-name> --image helpdesk:latest .
-   az webapp config container set --name <app-name> --resource-group <rg> \
-     --docker-custom-image-name <acr-name>.azurecr.io/helpdesk:latest
-   ```
+### ⏱️ SLA Monitor
+- Radial gauge of overall SLA compliance for the month (green/amber/red thresholds).
+- Breach counts and per-group SLA tracking.
 
----
+### 📄 Reports
+- Combine filters — group, technician, category, and multi-select priority/status — to build a focused view.
+- Reuses the KPI cards, group performance, category, and top-agent components against the filtered data set.
+- **CSV export** for sharing outside the app.
 
-## Project Structure
+### ⚙️ Settings & Sync
+- View SDP connection configuration.
+- Trigger a **Full** or **Incremental** sync from SDP on demand, with live progress polling and a completion toast.
+- Shows last sync time, ticket count, and status.
 
-```
-src/
-â”œâ”€â”€ app/
-â”‚   â”œâ”€â”€ (auth)/login/          # Azure AD login page
-â”‚   â”œâ”€â”€ (dashboard)/           # All authenticated pages (guarded by layout)
-â”‚   â”‚   â”œâ”€â”€ page.tsx            # Main dashboard
-â”‚   â”‚   â”œâ”€â”€ tickets/            # Ticket browser
-â”‚   â”‚   â”œâ”€â”€ analytics/          # Advanced analytics
-â”‚   â”‚   â”œâ”€â”€ reports/            # Report builder
-â”‚   â”‚   â”œâ”€â”€ sla-monitor/        # SLA tracking
-â”‚   â”‚   â””â”€â”€ settings/           # Admin settings + sync
-â”‚   â””â”€â”€ api/
-â”‚       â”œâ”€â”€ auth/[...nextauth]/ # NextAuth handler
-â”‚       â”œâ”€â”€ analytics/dashboard/ # KPIs + dashboard data
-â”‚       â”œâ”€â”€ tickets/            # Ticket list + filter API
-â”‚       â”œâ”€â”€ chat/               # Claude chatbot API
-â”‚       â””â”€â”€ sync/               # SDP sync trigger + status
-â”œâ”€â”€ components/
-â”‚   â”œâ”€â”€ layout/                 # Sidebar, Header, ThemeProvider
-â”‚   â”œâ”€â”€ dashboard/              # KPICard, charts, tables, footer
-â”‚   â””â”€â”€ chatbot/                # ChatWidget (floating AI assistant)
-â”œâ”€â”€ lib/
-â”‚   â”œâ”€â”€ analytics/aggregations.ts  # Prisma-based KPI queries
-â”‚   â”œâ”€â”€ auth/config.ts              # NextAuth + Azure AD config
-â”‚   â”œâ”€â”€ claude/chat.ts              # Claude with live SDP tool use
-â”‚   â”œâ”€â”€ db/prisma.ts                # Prisma client singleton
-â”‚   â”œâ”€â”€ integrations/servicedesk-plus/
-â”‚   â”‚   â”œâ”€â”€ client.ts          # Zoho OAuth2 + SDP API client
-â”‚   â”‚   â””â”€â”€ sync.ts            # Full/incremental sync engine
-â”‚   â””â”€â”€ utils.ts                   # Date, number, formatting helpers
-â”œâ”€â”€ types/index.ts                  # All shared TypeScript types
-prisma/
-â”œâ”€â”€ schema.prisma               # Full data model
-â””â”€â”€ seed.ts                     # 6 months of sample ticket data
-```
+### 🔔 Sortable Tables Everywhere
+Every data table in the app — Groups, Categories, Live Queue, drill-downs, and the Ticket Browser — has clickable column headers. Click to sort, click again to reverse. Priority sorts by severity (Urgent → Low), not alphabetically.
+
+### 🎨 Polish
+- **Light / dark mode** plus a raspberry brand accent theme, applied before first paint (no flash).
+- **Installable as a desktop app** (PWA) with a branded icon and manifest.
+- **Notifications** with mark-as-read.
+- Smooth transitions (Framer Motion), skeleton loading states, and toast notifications throughout.
 
 ---
 
-## ServiceDesk Plus Integration Notes
+## Screens
 
-Your SDP instance: `https://northpointe.sdpondemand.manageengine.com`
-
-Authentication uses **Zoho OAuth2 refresh-token flow** (not API key).
-
-Key API quirks handled in code:
-- Time filter condition is `"lesser than"` (not `"less than"`)
-- Time values must be nested: `{ value: "<epoch_ms>" }`
-- Category/subcategory require explicit `fields_required` in `list_info`
-- Ticket lookup by display_id requires a search, then detail fetch by internal id
-
-The chatbot queries SDP directly via tool use â€” no caching delay. It supports:
-`count_tickets`, `tickets_by_group`, `tickets_by_technician`, `tickets_by_status`,
-`tickets_by_category`, `tickets_by_subcategory`, `ticket_trends`, `recent_tickets`, `lookup_ticket`
+| Route | Screen | Purpose |
+|---|---|---|
+| `/login` | Login | Azure AD single sign-on |
+| `/` | Dashboard | KPIs, charts, tables, drill-downs by time period |
+| `/tickets` | Ticket Browser | Search, filter, sort, paginate; detail panel + SDP links |
+| `/analytics` | Live Queue | All open tickets, auto-refreshing, faceted filters |
+| `/sla-monitor` | SLA Monitor | Compliance gauge and breach tracking |
+| `/reports` | Reports | Multi-filter analysis with CSV export |
+| `/settings` | Settings | SDP config and on-demand sync |
 
 ---
 
-## AI Chatbot
+## AI Assistant
 
-The floating chatbot (bottom-right) uses Claude with Anthropic's tool-use API to query ServiceDesk Plus live. Example questions:
+A floating chat widget (bottom-right of every page) powered by **Anthropic's Claude** using tool-use. Instead of guessing from stale data, Claude calls a `query_tickets` tool that hits ServiceDesk Plus **live** and answers from the real result.
 
+Supported query types:
+`count_tickets`, `tickets_by_group`, `tickets_by_technician`, `tickets_by_status`, `tickets_by_category`, `tickets_by_subcategory`, `ticket_trends`, `recent_tickets`, and `lookup_ticket`.
+
+Example questions:
 - "How many tickets are open this week?"
 - "Which team has the most tickets this month?"
 - "Show me ticket trends for the last 30 days."
 - "Break down tickets by category this month."
 - "Look up ticket #12345."
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 15 (App Router), React 18, TypeScript |
+| Styling / UI | Tailwind CSS, shadcn/ui + Radix primitives, Framer Motion, Lucide icons |
+| Charts | Recharts |
+| Font | Inter (self-hosted via `@fontsource-variable/inter` — no build-time external fetch) |
+| Backend | Next.js API Routes (server-side) |
+| Database | PostgreSQL (production) / SQLite (local dev), via Prisma ORM |
+| Auth | NextAuth v4 + Azure AD / Entra ID SSO |
+| Integration | ServiceDesk Plus Cloud via Zoho OAuth2 (refresh-token flow) |
+| AI | Anthropic Claude (`@anthropic-ai/sdk`) with tool use |
+| Deployment | Docker; Azure App Service or Vercel |
+
+---
+
+## Architecture
+
+```
+src/
+├── app/
+│   ├── (auth)/login/            # Azure AD login page
+│   ├── (dashboard)/             # Authenticated pages (guarded by layout)
+│   │   ├── page.tsx             # Main dashboard
+│   │   ├── tickets/             # Ticket browser + detail panel
+│   │   ├── analytics/           # Live queue
+│   │   ├── reports/             # Report builder + CSV export
+│   │   ├── sla-monitor/         # SLA compliance
+│   │   └── settings/            # Config + sync
+│   └── api/
+│       ├── auth/[...nextauth]/  # NextAuth handler
+│       ├── analytics/           # dashboard / filters / live data
+│       ├── tickets/             # list + [id] detail (live SDP notes)
+│       ├── chat/                # Claude chatbot endpoint
+│       ├── sync/                # SDP sync trigger + status
+│       └── notifications/       # notification feed
+├── components/
+│   ├── layout/                  # Sidebar, Header, theme + color switchers, notifications
+│   ├── dashboard/               # KPI cards, charts, tables, feeds
+│   ├── tickets/                 # Ticket detail panel
+│   ├── chatbot/                 # Floating AI assistant
+│   └── ui/                      # Reusable primitives (e.g. sortable table header)
+├── lib/
+│   ├── analytics/aggregations.ts        # All KPI / breakdown queries
+│   ├── auth/config.ts                   # NextAuth + Azure AD
+│   ├── claude/chat.ts                   # Claude with live SDP tool use
+│   ├── db/prisma.ts                     # Prisma client
+│   ├── integrations/servicedesk-plus/   # OAuth2 client + sync engine
+│   ├── useSortableData.ts               # Client-side table sort hook
+│   └── utils.ts                         # Dates, formatting, SDP deep links
+└── types/index.ts                       # Shared TypeScript types
+prisma/
+├── schema.prisma                # Data model
+└── seed.ts                      # Sample data for local dev
+```
+
+---
+
+## Data Model
+
+Core entities (Prisma):
+
+- **Ticket** — the central record: subject, status, priority, timestamps, SLA breach flag, resolution/response times, and relations to group, technician, category, subcategory, and SLA. Indexed for fast period and status queries.
+- **Group**, **Technician** (+ **TechnicianGroup** join), **Category** (+ **Subcategory**), **SLA** — lookup tables synced from SDP.
+- **TicketHistory** — field-level change log.
+- **SyncJob** — tracks each sync (type, status, ticket count, errors).
+- **AnalyticsSnapshot** — cached period aggregates.
+- **ChatSession** / **ChatMessage** — chatbot conversation storage.
+- **User / Account / Session** — NextAuth (Azure AD) identity.
+- **AppConfig** — key/value app settings.
+
+---
+
+## ServiceDesk Plus Integration
+
+- **Instance:** `https://northpointe.sdpondemand.manageengine.com`
+- **Auth:** Zoho OAuth2 **refresh-token flow** (not a static API key).
+- **Sync engine:** full and incremental syncs, with concurrency limiting (`p-limit`) and automatic retries (`p-retry`).
+- **Deep links:** tickets link back to the SDP web UI at `/app/itdesk/ui/requests/<id>/details`.
+
+SDP API quirks handled in code:
+- Time filter condition is `"lesser than"` (not `"less than"`).
+- Time values must be nested as `{ value: "<epoch_ms>" }`.
+- Category/subcategory require an explicit `fields_required` in `list_info`.
+- Ticket lookup by display ID requires a search, then a detail fetch by internal ID.
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Node.js 20+
+- PostgreSQL 14+ (or SQLite for local dev — the default)
+- Azure AD app registration
+- Zoho OAuth2 credentials (from the SDP API console)
+- Anthropic API key
+
+### Install & run
+
+```bash
+cd northpointe-helpdesk
+npm install
+
+# Configure environment
+cp .env.example .env      # then fill in the values (see below)
+
+# Set up the database
+npm run db:generate
+npm run db:push
+npm run db:seed           # optional: sample data for local dev
+
+# Start the dev server
+npm run dev               # http://localhost:3000
+```
+
+### Useful scripts
+
+| Script | Purpose |
+|---|---|
+| `npm run dev` | Start the development server |
+| `npm run build` / `npm start` | Production build / serve |
+| `npm run db:push` | Apply the Prisma schema to the database |
+| `npm run db:seed` | Seed sample ticket data |
+| `npm run db:studio` | Open Prisma Studio (DB browser) |
+| `npm run sync` | Run an SDP sync from the CLI |
+
+---
+
+## Environment Variables
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | Database connection string (SQLite file or Postgres URL) |
+| `DATABASE_PROVIDER` | `sqlite` (dev) or `postgresql` (prod) |
+| `NEXTAUTH_URL` | App URL (`http://localhost:3000` in dev) |
+| `NEXTAUTH_SECRET` | Random secret (`openssl rand -base64 32`) |
+| `AZURE_AD_CLIENT_ID` / `_SECRET` / `_TENANT_ID` | Azure App Registration credentials |
+| `SDP_BASE_URL` | SDP instance URL |
+| `SDP_PORTAL_NAME` | SDP portal name |
+| `SDP_ZOHO_CLIENT_ID` / `_SECRET` / `_REFRESH_TOKEN` | Zoho OAuth2 credentials |
+| `SDP_SYNC_INTERVAL_MINUTES` | Sync cadence |
+| `ANTHROPIC_API_KEY` | Anthropic API key |
+| `CLAUDE_MODEL` | Claude model for the chatbot |
+| `ADMIN_EMAILS` | Comma-separated admin emails |
+| `NEXT_PUBLIC_SDP_BASE_URL` / `NEXT_PUBLIC_SDP_PORTAL_NAME` | Optional overrides for the "Open in SDP" deep links |
+
+> `.env` is git-ignored and must never be committed — it holds live secrets.
+
+---
+
+## Deployment
+
+**Docker (full stack):**
+```bash
+cp .env.example .env      # fill in values
+docker compose up --build
+# with pgAdmin: docker compose --profile tools up
+```
+
+**Azure (recommended):**
+1. Create an **Azure Database for PostgreSQL** (Flexible Server); set `DATABASE_URL`.
+2. Register an **Azure AD app**; add redirect URI `https://<app>.azurewebsites.net/api/auth/callback/azure-ad`.
+3. Deploy the Docker image to **Azure App Service** (Linux); set all env vars under Application Settings.
+
+The font is self-hosted, so production builds do **not** require outbound access to Google Fonts (important behind SSL-inspecting corporate networks).
+
+---
+
+## Security Notes
+
+- Authentication is enforced via Azure AD SSO; all dashboard routes require a valid session, and admin actions are gated by `ADMIN_EMAILS`.
+- Secrets live only in `.env` (git-ignored) — rotate the Zoho refresh token and Anthropic key if they are ever exposed.
+- SDP access uses a refresh-token flow, so no long-lived API key is stored.
+
+---
+
+*Internal tool built for Northpointe Bank IT.*
