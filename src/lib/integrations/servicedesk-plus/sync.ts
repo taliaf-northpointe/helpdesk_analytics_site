@@ -20,7 +20,7 @@ function mapStatus(sdpStatus: string): TicketStatus {
   const s = sdpStatus.trim() as TicketStatus;
   if (VALID_STATUSES.has(s)) return s;
   // Known SDP aliases
-  if (s === "Completed" || (s as string) === "Resolved") return "Closed";
+  if ((s as string) === "Completed" || (s as string) === "Resolved") return "Closed";
   if ((s as string) === "Received - Assessing")          return "Open";
   return "Open";
 }

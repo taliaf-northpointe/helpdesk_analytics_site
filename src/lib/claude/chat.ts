@@ -104,23 +104,23 @@ async function executeSdpQuery(params: QueryParams): Promise<string> {
       return JSON.stringify({ action: params.action, period: params.period, count: total }, null, 2);
 
     case "tickets_by_technician":
-      return JSON.stringify({ action: params.action, period: params.period, total, breakdown: groupCount(rows as AnyRow[], (r) => ((r as AnyRow).technician as AnyRow)?.name as string) }, null, 2);
+      return JSON.stringify({ action: params.action, period: params.period, total, breakdown: groupCount(rows as unknown as AnyRow[], (r) => ((r as AnyRow).technician as AnyRow)?.name as string) }, null, 2);
 
     case "tickets_by_group":
-      return JSON.stringify({ action: params.action, period: params.period, total, breakdown: groupCount(rows as AnyRow[], (r) => ((r as AnyRow).group as AnyRow)?.name as string) }, null, 2);
+      return JSON.stringify({ action: params.action, period: params.period, total, breakdown: groupCount(rows as unknown as AnyRow[], (r) => ((r as AnyRow).group as AnyRow)?.name as string) }, null, 2);
 
     case "tickets_by_status":
-      return JSON.stringify({ action: params.action, period: params.period, total, breakdown: groupCount(rows as AnyRow[], (r) => ((r as AnyRow).status as AnyRow)?.name as string) }, null, 2);
+      return JSON.stringify({ action: params.action, period: params.period, total, breakdown: groupCount(rows as unknown as AnyRow[], (r) => ((r as AnyRow).status as AnyRow)?.name as string) }, null, 2);
 
     case "tickets_by_category":
-      return JSON.stringify({ action: params.action, period: params.period, total, breakdown: groupCount(rows as AnyRow[], (r) => ((r as AnyRow).category as AnyRow)?.name as string) }, null, 2);
+      return JSON.stringify({ action: params.action, period: params.period, total, breakdown: groupCount(rows as unknown as AnyRow[], (r) => ((r as AnyRow).category as AnyRow)?.name as string) }, null, 2);
 
     case "tickets_by_subcategory":
-      return JSON.stringify({ action: params.action, period: params.period, total, breakdown: groupCount(rows as AnyRow[], (r) => ((r as AnyRow).subcategory as AnyRow)?.name as string) }, null, 2);
+      return JSON.stringify({ action: params.action, period: params.period, total, breakdown: groupCount(rows as unknown as AnyRow[], (r) => ((r as AnyRow).subcategory as AnyRow)?.name as string) }, null, 2);
 
     case "ticket_trends": {
       const buckets: Record<string, number> = {};
-      for (const r of rows as AnyRow[]) {
+      for (const r of rows as unknown as AnyRow[]) {
         const v = ((r.created_time as AnyRow)?.value) as string | undefined;
         if (!v) continue;
         const key = new Date(Number(v)).toISOString().slice(0, 10);
@@ -131,7 +131,7 @@ async function executeSdpQuery(params: QueryParams): Promise<string> {
 
     case "recent_tickets":
     default:
-      return JSON.stringify({ action: params.action, period: params.period, total, tickets: (rows as AnyRow[]).slice(0, 20).map(pick) }, null, 2);
+      return JSON.stringify({ action: params.action, period: params.period, total, tickets: (rows as unknown as AnyRow[]).slice(0, 20).map(pick) }, null, 2);
   }
 }
 
