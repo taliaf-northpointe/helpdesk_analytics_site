@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Clock, Shield, User, Users, Tag, Calendar } from "lucide-react";
-import { cn, STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, formatDate } from "@/lib/utils";
+import { X, Clock, Shield, User, Users, Tag, Calendar, ExternalLink } from "lucide-react";
+import { cn, STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, formatDate, sdpTicketUrl } from "@/lib/utils";
 
 interface SdpNote {
   id: string;
@@ -120,9 +120,19 @@ export function TicketDetailPanel({ ticketId, onClose }: Props) {
         {/* Header */}
         <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-border shrink-0">
           <div className="min-w-0">
-            <p className="text-xs font-mono text-muted-foreground">
-              #{data?.ticket.displayId ?? data?.ticket.externalId ?? "…"}
-            </p>
+            {data ? (
+              <a
+                href={sdpTicketUrl(data.ticket.externalId)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-mono text-muted-foreground hover:text-brand-primary transition-colors"
+              >
+                #{data.ticket.displayId ?? data.ticket.externalId}
+                <ExternalLink size={11} />
+              </a>
+            ) : (
+              <p className="text-xs font-mono text-muted-foreground">#…</p>
+            )}
             <h2 className="text-sm font-semibold text-foreground mt-0.5 leading-snug line-clamp-2">
               {loading
                 ? <span className="inline-block h-4 w-56 rounded bg-muted animate-pulse" />
@@ -133,6 +143,21 @@ export function TicketDetailPanel({ ticketId, onClose }: Props) {
             <X size={16} className="text-muted-foreground" />
           </button>
         </div>
+
+        {/* Open in SDP */}
+        {data && (
+          <div className="px-5 py-3 border-b border-border shrink-0">
+            <a
+              href={sdpTicketUrl(data.ticket.externalId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-brand-primary text-white text-sm font-medium hover:bg-brand-primary-dark transition-colors"
+            >
+              <ExternalLink size={14} />
+              Open in ServiceDesk Plus
+            </a>
+          </div>
+        )}
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto">

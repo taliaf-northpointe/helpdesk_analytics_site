@@ -97,6 +97,20 @@ export function calcDelta(current: number, previous: number): number {
   return Math.round(((current - previous) / previous) * 1000) / 10;
 }
 
+// ─── ServiceDesk Plus links ────────────────────────────────────────────────────
+
+/**
+ * Build a deep link to a ticket in the ServiceDesk Plus Cloud web UI.
+ * Example: https://northpointe.sdpondemand.manageengine.com/app/itdesk/ui/requests/<id>/details
+ * Base URL and portal are overridable via NEXT_PUBLIC_SDP_BASE_URL / NEXT_PUBLIC_SDP_PORTAL_NAME.
+ */
+export function sdpTicketUrl(externalId: string): string {
+  const base   = (process.env.NEXT_PUBLIC_SDP_BASE_URL ?? "https://northpointe.sdpondemand.manageengine.com").replace(/\/$/, "");
+  const portal = process.env.NEXT_PUBLIC_SDP_PORTAL_NAME ?? "itdesk";
+  const id     = externalId.replace(/^sdp-/, "");
+  return `${base}/app/${portal}/ui/requests/${id}/details`;
+}
+
 // ─── Greeting helper ─────────────────────────────────────────────────────────
 
 export function getGreeting(): string {
