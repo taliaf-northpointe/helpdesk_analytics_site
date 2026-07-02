@@ -83,7 +83,7 @@ const config: Config = {
         blush: "#ffebef",
       },
       fontFamily: {
-        sans: ["Inter", "var(--font-inter)", ...fontFamily.sans],
+        sans: ["Inter Variable", "Inter", ...fontFamily.sans],
         mono: ["var(--font-mono)", ...fontFamily.mono],
       },
       borderRadius: {
