@@ -210,29 +210,42 @@ SDP API quirks handled in code:
 ## Getting Started
 
 ### Prerequisites
-- Node.js 20+
-- PostgreSQL 14+ (or SQLite for local dev — the default)
-- Azure AD app registration
-- Zoho OAuth2 credentials (from the SDP API console)
-- Anthropic API key
+- Node.js 20+ and git
+- **Azure AD (Entra ID) app registration — required to sign in** (see the note below)
+- Zoho OAuth2 credentials (from the SDP API console) — for live sync and the chatbot
+- Anthropic API key — for the chatbot
+- SQLite is used for local dev out of the box; PostgreSQL is used in production
 
 ### Install & run
 
 ```bash
-cd northpointe-helpdesk
+# 1. Clone
+git clone https://github.com/taliaf-northpointe/helpdesk_analytics_site.git
+cd helpdesk_analytics_site
+
+# 2. Install dependencies
 npm install
 
-# Configure environment
-cp .env.example .env      # then fill in the values (see below)
+# 3. Create the env file (.env is git-ignored, so it is not in the clone)
+cp .env.example .env      # then fill in the values (see Environment Variables below)
 
-# Set up the database
+# 4. Set up the database
 npm run db:generate
 npm run db:push
-npm run db:seed           # optional: sample data for local dev
+npm run db:seed           # loads sample tickets so the UI has data
 
-# Start the dev server
+# 5. Start the dev server
 npm run dev               # http://localhost:3000
 ```
+
+> **Local database:** the Prisma schema is configured for **SQLite** in local dev. In your `.env`, use:
+> ```
+> DATABASE_PROVIDER="sqlite"
+> DATABASE_URL="file:./dev.db"
+> ```
+> The PostgreSQL connection string shown in `.env.example` is for production — using it directly in local dev causes a Prisma provider mismatch.
+
+> **Signing in requires Azure AD.** Every page is behind Azure AD (Entra ID) single sign-on — there is no guest or demo login. To open the app (even locally) you must configure a working Azure AD app registration in your `.env`; otherwise you will stay on the `/login` screen.
 
 ### Useful scripts
 
