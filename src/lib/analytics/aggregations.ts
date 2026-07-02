@@ -256,10 +256,12 @@ export async function getCategoryBreakdown(period: TimePeriod, filters?: ReportF
         trend,
         subcategories: c.subcategories
           .map((s) => ({ name: s.name, count: s.tickets.length }))
+          .filter((s) => s.count > 0)
           .sort((a, b) => b.count - a.count)
           .slice(0, 5),
       } as CategoryBreakdown;
     })
+    .filter((c) => c.count > 0)
     .sort((a, b) => b.count - a.count);
 }
 

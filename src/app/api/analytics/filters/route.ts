@@ -10,7 +10,7 @@ export async function GET() {
   const [groups, technicians, categories] = await Promise.all([
     prisma.group.findMany({ select: { name: true } }),
     prisma.technician.findMany({ select: { name: true } }),
-    prisma.category.findMany({ select: { name: true }, where: { isActive: true } }),
+    prisma.category.findMany({ select: { name: true }, where: { isActive: true, tickets: { some: {} } } }),
   ]);
 
   // Deduplicate by name (SDP may have created duplicate records)
