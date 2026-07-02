@@ -1,12 +1,22 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useSortableData, type SortAccessor } from "@/lib/useSortableData";
+import { SortableHeader } from "@/components/ui/SortableHeader";
 import type { GroupPerformance } from "@/types";
 
 interface Props {
   data:     GroupPerformance[];
   loading?: boolean;
 }
+
+const ACCESSORS: Record<string, SortAccessor<GroupPerformance>> = {
+  groupName:    (r) => r.groupName,
+  totalTickets: (r) => r.totalTickets,
+  open:         (r) => r.open,
+  closed:       (r) => r.closed,
+  slaPercent:   (r) => r.slaPercent,
+};
 
 function SLABadge({ value }: { value: number }) {
   const color =
@@ -17,6 +27,8 @@ function SLABadge({ value }: { value: number }) {
 }
 
 export function PerformanceTable({ data, loading }: Props) {
+  const { sorted, sortKey, sortDir, toggleSort } = useSortableData(data, ACCESSORS, { key: "totalTickets", dir: "desc" });
+
   if (loading) {
     return (
       <div className="space-y-2 animate-pulse">
@@ -32,20 +44,20 @@ export function PerformanceTable({ data, loading }: Props) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left">
-            <th className="pb-2 pr-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Group Name</th>
-            <th className="pb-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Total</th>
-            <th className="pb-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Open</th>
-            <th className="pb-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Closed</th>
-            <th className="pb-2 pl-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">SLA %</th>
+            <SortableHeader label="Group Name" sortKey="groupName"    activeKey={sortKey} dir={sortDir} onSort={toggleSort} className="pb-2 pr-4" />
+            <SortableHeader label="Total"      sortKey="totalTickets" activeKey={sortKey} dir={sortDir} onSort={toggleSort} align="right" className="pb-2 px-3" />
+            <SortableHeader label="Open"       sortKey="open"         activeKey={sortKey} dir={sortDir} onSort={toggleSort} align="right" className="pb-2 px-3" />
+            <SortableHeader label="Closed"     sortKey="closed"       activeKey={sortKey} dir={sortDir} onSort={toggleSort} align="right" className="pb-2 px-3" />
+            <SortableHeader label="SLA %"      sortKey="slaPercent"   activeKey={sortKey} dir={sortDir} onSort={toggleSort} align="right" className="pb-2 pl-3" />
           </tr>
         </thead>
         <tbody>
-          {data.map((row, i) => (
+          {sorted.map((row, i) => (
             <tr
               key={row.groupId}
               className={cn(
                 "border-b border-border/50 hover:bg-muted/40 transition-colors",
-                i === data.length - 1 && "border-0",
+                i === sorted.length - 1 && "border-0",
               )}
             >
               <td className="py-3 pr-4 font-medium text-foreground">{row.groupName}</td>

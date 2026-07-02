@@ -1,12 +1,23 @@
 "use client";
 
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { useSortableData, type SortAccessor } from "@/lib/useSortableData";
+import { SortableHeader } from "@/components/ui/SortableHeader";
 import type { CategoryBreakdown } from "@/types";
 
 interface Props {
   data:     CategoryBreakdown[];
   loading?: boolean;
 }
+
+const TREND_RANK: Record<string, number> = { down: 0, flat: 1, up: 2 };
+
+const ACCESSORS: Record<string, SortAccessor<CategoryBreakdown>> = {
+  categoryName: (c) => c.categoryName,
+  subcategory:  (c) => c.subcategories[0]?.name ?? "",
+  count:        (c) => c.count,
+  trend:        (c) => TREND_RANK[c.trend] ?? 1,
+};
 
 const TrendIcon = ({ trend }: { trend: "up" | "down" | "flat" }) => {
   if (trend === "up")   return <TrendingUp  size={14} className="text-emerald-500" />;
@@ -15,6 +26,8 @@ const TrendIcon = ({ trend }: { trend: "up" | "down" | "flat" }) => {
 };
 
 export function TicketsByCategory({ data, loading }: Props) {
+  const { sorted, sortKey, sortDir, toggleSort } = useSortableData(data, ACCESSORS, { key: "count", dir: "desc" });
+
   if (loading) {
     return (
       <div className="space-y-2 animate-pulse">
@@ -30,14 +43,14 @@ export function TicketsByCategory({ data, loading }: Props) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left">
-            <th className="pb-2 pr-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Category</th>
-            <th className="pb-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Subcategory</th>
-            <th className="pb-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Count</th>
-            <th className="pb-2 pl-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center">Trend</th>
+            <SortableHeader label="Category"    sortKey="categoryName" activeKey={sortKey} dir={sortDir} onSort={toggleSort} className="pb-2 pr-4" />
+            <SortableHeader label="Subcategory" sortKey="subcategory"  activeKey={sortKey} dir={sortDir} onSort={toggleSort} className="pb-2 px-3" />
+            <SortableHeader label="Count"       sortKey="count"        activeKey={sortKey} dir={sortDir} onSort={toggleSort} align="right"  className="pb-2 px-3" />
+            <SortableHeader label="Trend"       sortKey="trend"        activeKey={sortKey} dir={sortDir} onSort={toggleSort} align="center" className="pb-2 pl-3" />
           </tr>
         </thead>
         <tbody>
-          {data.map((cat, i) => (
+          {sorted.map((cat, i) => (
             <tr
               key={cat.categoryId}
               className="border-b border-border/50 hover:bg-muted/40 transition-colors"

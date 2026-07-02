@@ -6,6 +6,8 @@ import { ChatWidget } from "@/components/chatbot/ChatWidget";
 import { cn, STATUS_COLORS, PRIORITY_COLORS, PRIORITY_LABELS, formatDate } from "@/lib/utils";
 import { Search, X, AlertTriangle, Clock, ShieldAlert, Ticket, RefreshCw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useSortableData, type SortAccessor } from "@/lib/useSortableData";
+import { SortableHeader } from "@/components/ui/SortableHeader";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,6 +42,21 @@ const AGE_COLOR = (days: number) =>
   days >= 30 ? "text-raspberry-600 font-semibold"
   : days >= 14 ? "text-amber-600 font-medium"
   : "text-muted-foreground";
+
+const PRIORITY_RANK: Record<string, number> = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+
+const TICKET_ACCESSORS: Record<string, SortAccessor<LiveTicket>> = {
+  externalId: (t) => t.externalId,
+  subject:    (t) => t.subject,
+  status:     (t) => t.status,
+  group:      (t) => t.group,
+  technician: (t) => t.technician,
+  category:   (t) => t.category,
+  createdAt:  (t) => t.createdAt,
+  ageDays:    (t) => t.ageDays,
+  priority:   (t) => PRIORITY_RANK[t.priority] ?? 0,
+  slaBreach:  (t) => (t.slaBreach ? 1 : 0),
+};
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -85,6 +102,8 @@ export default function LiveQueuePage() {
       return true;
     });
   }, [data, filterStatus, filterGroup, filterAgent, search]);
+
+  const { sorted: sortedTickets, sortKey, sortDir, toggleSort } = useSortableData(filteredTickets, TICKET_ACCESSORS);
 
   const hasFilters = !!(filterStatus || filterGroup || filterAgent || search);
 
@@ -259,8 +278,27 @@ export default function LiveQueuePage() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b border-border">
                 <tr>
-                  {["#", "Subject", "Status", "Group", "Agent", "Category", "Opened", "Age", "Priority", "SLA"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  {([
+                    { key: "externalId", label: "#"        },
+                    { key: "subject",    label: "Subject"  },
+                    { key: "status",     label: "Status"   },
+                    { key: "group",      label: "Group"    },
+                    { key: "technician", label: "Agent"    },
+                    { key: "category",   label: "Category" },
+                    { key: "createdAt",  label: "Opened"   },
+                    { key: "ageDays",    label: "Age"      },
+                    { key: "priority",   label: "Priority" },
+                    { key: "slaBreach",  label: "SLA"      },
+                  ] as { key: string; label: string }[]).map(({ key, label }) => (
+                    <SortableHeader
+                      key={key}
+                      label={label}
+                      sortKey={key}
+                      activeKey={sortKey}
+                      dir={sortDir}
+                      onSort={toggleSort}
+                      className="px-4 py-3"
+                    />
                   ))}
                 </tr>
               </thead>
@@ -273,7 +311,7 @@ export default function LiveQueuePage() {
                       ))}
                     </tr>
                   ))
-                  : filteredTickets.map((t) => (
+                  : sortedTickets.map((t) => (
                     <tr key={t.id} className="border-b border-border/50 hover:bg-muted/40 transition-colors">
                       <td className="px-4 py-3 text-muted-foreground font-mono text-xs whitespace-nowrap">#{t.externalId}</td>
                       <td className="px-4 py-3 font-medium text-foreground max-w-xs truncate">{t.subject}</td>

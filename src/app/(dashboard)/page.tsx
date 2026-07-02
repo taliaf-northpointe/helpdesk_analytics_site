@@ -18,6 +18,8 @@ import { DashboardFooter }    from "@/components/dashboard/DashboardFooter";
 import { ChatWidget }         from "@/components/chatbot/ChatWidget";
 import { getGreeting, formatNumber, formatPercent } from "@/lib/utils";
 import type { DashboardData, TimePeriod } from "@/types";
+import { useSortableData, type SortAccessor } from "@/lib/useSortableData";
+import { SortableHeader } from "@/components/ui/SortableHeader";
 import { toast } from "sonner";
 
 const PERIODS: { key: TimePeriod; label: string; sub: string }[] = [
@@ -35,6 +37,24 @@ const OPEN_STATUSES_CSV = [
   "Open", "Pending Requester Response", "On Hold / Waiting for Vendor",
   "Awaiting CAB", "Awaiting Peer Review", "Awaiting prod sign-off", "Awaiting Vendor Action",
 ].join(",");
+
+interface DrillTicket {
+  id: string; externalId: string; subject: string; status: string; priority: string;
+  group?: { name: string }; technician?: { name: string }; createdAt: string; slaBreach: boolean;
+}
+
+const PRIORITY_RANK: Record<string, number> = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+
+const DRILL_ACCESSORS: Record<string, SortAccessor<DrillTicket>> = {
+  externalId: (t) => t.externalId,
+  subject:    (t) => t.subject,
+  status:     (t) => t.status,
+  group:      (t) => t.group?.name ?? "",
+  technician: (t) => t.technician?.name ?? "",
+  createdAt:  (t) => t.createdAt,
+  priority:   (t) => PRIORITY_RANK[t.priority] ?? 0,
+  slaBreach:  (t) => (t.slaBreach ? 1 : 0),
+};
 
 export default function DashboardPage() {
   const [period,     setPeriod]     = useState<TimePeriod>("monthly");
@@ -139,6 +159,10 @@ export default function DashboardPage() {
   const kpis    = data?.kpis;
   const periodSub = useMemo(() => PERIODS.find((p) => p.key === period)?.sub ?? "", [period]);
 
+  const drillRows = (drillTickets?.tickets as DrillTicket[] | undefined) ?? [];
+  const { sorted: sortedDrill, sortKey: drillSortKey, sortDir: drillSortDir, toggleSort: toggleDrillSort } =
+    useSortableData(drillRows, DRILL_ACCESSORS);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header
@@ -207,8 +231,25 @@ export default function DashboardPage() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b border-border">
                   <tr>
-                    {["#", "Subject", "Status", "Group", "Agent", "Created", "Priority", "SLA"].map((h) => (
-                      <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    {([
+                      { key: "externalId", label: "#"        },
+                      { key: "subject",    label: "Subject"  },
+                      { key: "status",     label: "Status"   },
+                      { key: "group",      label: "Group"    },
+                      { key: "technician", label: "Agent"    },
+                      { key: "createdAt",  label: "Created"  },
+                      { key: "priority",   label: "Priority" },
+                      { key: "slaBreach",  label: "SLA"      },
+                    ] as { key: string; label: string }[]).map(({ key, label }) => (
+                      <SortableHeader
+                        key={key}
+                        label={label}
+                        sortKey={key}
+                        activeKey={drillSortKey}
+                        dir={drillSortDir}
+                        onSort={toggleDrillSort}
+                        className="px-4 py-2.5"
+                      />
                     ))}
                   </tr>
                 </thead>
@@ -221,7 +262,7 @@ export default function DashboardPage() {
                         ))}
                       </tr>
                     ))
-                    : (drillTickets?.tickets as { id: string; externalId: string; subject: string; status: string; priority: string; group?: { name: string }; technician?: { name: string }; createdAt: string; slaBreach: boolean }[] ?? []).map((t) => (
+                    : sortedDrill.map((t) => (
                       <tr key={t.id} className="border-b border-border/50 hover:bg-muted/40 transition-colors">
                         <td className="px-4 py-2.5 text-muted-foreground font-mono text-xs">#{t.externalId}</td>
                         <td className="px-4 py-2.5 font-medium text-foreground max-w-xs truncate">{t.subject}</td>
@@ -259,7 +300,7 @@ export default function DashboardPage() {
                     <ChevronLeft size={12}/>
                   </button>
                   <button onClick={() => setDrillPage((p) => p + 1)}
-                    disabled={(drillTickets!.pagination as { pages: number }).pages <= drillPage}
+                    disabled={(drillTickets!.pagination as { total: number; pages: number }).pages <= drillPage}
                     className="p-1 rounded border border-border hover:bg-muted disabled:opacity-40 transition-colors">
                     <ChevronRight size={12}/>
                   </button>
